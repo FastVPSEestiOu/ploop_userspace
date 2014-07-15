@@ -48,6 +48,7 @@ bat_table_type ploop_bat;
 ifstream ploop_global_file_handle;
 /* Cluster size in bytes */
 int global_ploop_cluster_size = 0; 
+int global_first_block_offset = 0;
 
 // BAT block format:
 // https://github.com/pavel-odintsov/openvz_rhel6_kernel_mirror/blob/master/drivers/block/ploop/map.c
@@ -185,7 +186,9 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
 
         // Смещение первого блока с данными в байтах
         int first_data_block_offset = ploop_header->m_FirstBlockOffset * BYTES_IN_SECTOR;
-       
+      
+        global_first_block_offset = first_data_block_offset;
+ 
         // Теперь зная размер блока и смещение блока с данными можно посчитать число блоков BAT
         if (first_data_block_offset % cluster_size != 0) {
             cout <<"Internal error! Data offset should be in start of cluster"<<endl;
@@ -264,12 +267,14 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
 static int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata) {
     cout<<"We got request for reading from offset: "<<offset<<" length "<<len<< " bytes"<<endl;
 
-    // TODO: ADD DATA OFFSET!!!
-    int ploop_block_size = global_ploop_cluster_size * 1024;
-    int data_page_number = offset / ploop_block_size;
-    int data_page_offset = offset % ploop_block_size;
+    assert(global_first_block_offset == 0);
+    assert(global_ploop_cluster_size == 0);
+
+    int data_page_number = offset / global_ploop_cluster_size;
+    int data_page_offset = offset % global_ploop_cluster_size;
+
     int data_page_real_place = ploop_bat[data_page_number];
-    unsigned int position_in_file = data_page_real_place * ploop_block_size + data_page_offset;
+    unsigned int position_in_file = global_first_block_offset + (data_page_real_place-1) * global_ploop_cluster_size + data_page_offset;
 
     /*
     cout<<"data_page_number: "<<data_page_number<<endl;
