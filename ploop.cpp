@@ -17,6 +17,7 @@ Author: pavel.odintsov@gmail.com
 #include <sys/stat.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <assert.h>
 
 #include <map>
 
