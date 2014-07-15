@@ -72,7 +72,7 @@ struct ploop_pvd_header
 #pragma pack(pop)
 
 // Prototypes
-int file_exists(char* path);
+int file_exists(char* file_path);
 int get_ploop_version(struct ploop_pvd_header* header);
 __u64 get_ploop_size_in_sectors(struct ploop_pvd_header* header);
 
@@ -125,7 +125,7 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path) {
 
 }
 
-int file_exists(char* path) {
+int file_exists(char* file_path) {
     struct stat stat_data;
 
     int stat_res = stat(file_path, &stat_data);
