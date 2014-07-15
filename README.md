@@ -10,6 +10,11 @@ How it works? We use [BUSE](https://github.com/acozzette/BUSE) and NBD for emula
 
 Installing:
 
+Requrements for Debian:
+```bash
+apt-get install -y kpartx build-essential
+```
+
 You need only g++ and gcc for compiling this code.
 ```bash
 cd /usr/src
