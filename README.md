@@ -13,7 +13,7 @@ Installing:
 You need only g++ and gcc for compiling this code.
 ```bash
 cd /usr/src
-git clone git@github.com:FastVPSEestiOu/ploop_userspace.git
+git clone https://github.com/FastVPSEestiOu/ploop_userspace.git
 make
 ```
 
