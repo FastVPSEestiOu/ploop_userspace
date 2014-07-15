@@ -72,6 +72,7 @@ struct ploop_pvd_header
 #pragma pack(pop)
 
 // Prototypes
+bool is_digit_line(char* string);
 int file_exists(char* file_path);
 int get_ploop_version(struct ploop_pvd_header* header);
 __u64 get_ploop_size_in_sectors(struct ploop_pvd_header* header);
@@ -308,15 +309,32 @@ void init_ploop_userspace(__u64 disk_size_in_bytes) {
     //ploop_userspace.trim = ploop_trim;
 }
 
+bool is_digit_line(char* string) {
+    for (int i = 0; i < strlen(string); i++) {
+        if(!isdigit(string[i])) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        cout<<"Please specify CTID"<<endl;
+        cout<<"Please specify CTID or path to ploop image"<<endl;
         exit(1);
     } 
 
     char* nbd_device_name = (char*)"/dev/nbd0";
     char file_path[256];
-    sprintf(file_path, "/vz/private/%s/root.hdd/root.hdd", argv[1]);
+
+    if (is_digit_line(argv[1])) {
+        // We got CTID number
+        sprintf(file_path, "/vz/private/%s/root.hdd/root.hdd", argv[1]);
+    } else {
+        // We got path to root.hdd
+        sprintf(file_path, "%s", argv[1]);
+    }
 
     if (!file_exists(file_path)) {
         cout<<"Path "<<file_path<<" is not exists, please check CTID number"<<endl;
@@ -349,6 +367,13 @@ int main(int argc, char *argv[]) {
         char partx_command[128];
         sprintf(partx_command, "partx -a %s 2>&1 >/dev/null", nbd_device_name);
         system(partx_command);
+
+        char first_nbd_partition_path[256];
+        sprintf(first_nbd_partition_path, "%sp1", nbd_device_name);
+
+        if (!file_exists(first_nbd_partition_path)) {
+            cout<<"First ploop partition was not detected properly, please call partx/partprobla manually";
+        }
 
         cout<<"You could mount ploop filesystem with command: "<<"mount -r -o noload "<<nbd_device_name<<"p1 /mnt"<<endl;
         
