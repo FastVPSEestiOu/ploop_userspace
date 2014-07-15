@@ -6,11 +6,11 @@ Tool for mounting [OpenVZ ploop](http://openvz.org/Ploop) images without support
 Author: Pavel Odintsov pavel.odintsov at gmail.com from FastVPS.ru :)
 License: GPLv2
 
-How it works? We use [BUSE](https://github.com/acozzette/BUSE) and NBD for emulating block device without any support from kernel. We got some code from ploop project and reverse storgae format. But we can only read ploop images because writing is too dangerous and  complicated and will be result to incompatibility with in-kernel ploop.  
+How it works? We use [BUSE](https://github.com/acozzette/BUSE) and NBD for emulating block device without any support from kernel. We got some code from ploop project and reverse storage format. We can only read ploop images because writing to a ploop file with this tool is too dangerous yet and complicated and will be result in incompatibility with in-kernel ploop.
 
 Installing:
 
-Requrements for Debian:
+Requirements for Debian:
 ```bash
 apt-get install -y kpartx build-essential
 ```
@@ -48,11 +48,11 @@ You could mount ploop filesystem with command: mount -r -o noload /dev/nbd0p1 /m
 ```
 
 FAQ:
-* Can I got direct access to partition inside ploop? Yes!
-* Can I got direct access to whole block device inside ploop? Yes!
-* Can I mount non ext3/ext4 fs from ploop? yes!
-* Can I send patches to you! YES YES YES!
-* This code is stable? Not thoroughly.
-* Could I mount plop for write? Not because it's too complicated
-* What license of your code? GPLv2
-* Yout code is fast enought? Yep! I can copy files from ploop in ~51MB/sec on SAS powered RAID-10.
+* Can I get direct access to partitions inside ploop? Yes!
+* Can I get direct access to the whole block device inside ploop? Yes!
+* Can I mount non ext3/ext4 filesystems from ploop? Yes!
+* Can I send patches to you? YES YES YES!
+* Is this code stable yet? Not thoroughly.
+* Can I somehow mount the ploop device writable with this tool? No, because implementing the writing technology is too complicated and may result in incompatibility with the real ploop technology from OpenVZ.
+* What license is your code? GPLv2
+* Isn't a userspace mount slow as hell? Nope, I can copy files from the ploop device with it at about ~51MB/s on a SAS powered RAID 10 system.
