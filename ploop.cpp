@@ -35,15 +35,19 @@ using namespace std;
 /* Compressed disk v2 signature */
 #define SIGNATURE_STRUCTURED_DISK_V2 "WithouFreSpacExt"
 
+/* Bytes in sector */
+#define BYTES_IN_SECTOR 512
+
 /* This defines slot in mapping page. Right now it is 32 bit
  * and therefore it directly matches ploop1 structure. */
 typedef __u32 map_index_t;
 
 /* Эти переменные вынуждены быть глобальными, так как иного варианта работы с ними в BUSE нету */
-std::map<__u64, map_index_t> ploop_bat;
+typedef std::map<__u64, map_index_t> bat_table_type;
+bat_table_type ploop_bat;
 ifstream ploop_global_file_handle;
 
-// Формат BAT блока:
+// BAT block format:
 // https://github.com/pavel-odintsov/openvz_rhel6_kernel_mirror/blob/master/drivers/block/ploop/map.c
 // Очень важная функция в ядре: drivers/block/ploop/fmt_ploop1.c, ploop1_open
 
@@ -71,12 +75,14 @@ struct ploop_pvd_header
 };
 #pragma pack(pop)
 
-// Prototypes
+/* Prototypes */
+void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& ploop_bat);
 bool is_digit_line(char* string);
 int file_exists(char* file_path);
 int get_ploop_version(struct ploop_pvd_header* header);
 __u64 get_ploop_size_in_sectors(struct ploop_pvd_header* header);
 
+/* Functions */
 __u64 get_ploop_size_in_sectors(struct ploop_pvd_header* header) {
     int ploop_version = get_ploop_version(header);
     __u64 disk_size = 0;
@@ -121,11 +127,6 @@ int get_ploop_version(struct ploop_pvd_header* header) {
 }
 
 
-// Прочесть BAT таблицу
-void read_bat(ploop_pvd_header* ploop_header, char* file_path) {
-
-}
-
 int file_exists(char* file_path) {
     struct stat stat_data;
 
@@ -161,12 +162,25 @@ void read_header(ploop_pvd_header* ploop_header, char* file_path) {
         }
 
         print_ploop_header(ploop_header);
+    } else {
+        std::cout<<"Can't open ploop file"<<endl;
+        exit(1);
+    }
+}
+
+// Прочесть BAT таблицу
+void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& ploop_bat) {
+    ifstream ploop_file(file_path, ios::in|ios::binary);
+
+    if (ploop_file.is_open()) {
+        // skip ploop header
+        ploop_file.seekg(sizeof(ploop_pvd_header));
 
         // Размер блока ploop в байтах
-        int cluster_size = ploop_header->m_Sectors * 512;
+        int cluster_size = ploop_header->m_Sectors * BYTES_IN_SECTOR;
 
         // Смещение первого блока с данными в байтах
-        int first_data_block_offset = ploop_header->m_FirstBlockOffset * 512;
+        int first_data_block_offset = ploop_header->m_FirstBlockOffset * BYTES_IN_SECTOR;
        
         // Теперь зная размер блока и смещение блока с данными можно посчитать число блоков BAT
         if (first_data_block_offset % cluster_size != 0) {
@@ -243,22 +257,23 @@ void read_header(ploop_pvd_header* ploop_header, char* file_path) {
     } 
 }
 
-static int buse_debug = 1;
-
 static int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata) {
     cout<<"We got request for reading from offset: "<<offset<<" length "<<len<< " bytes"<<endl;
 
-    int data_page_number = offset / (1024*1024);
-    int data_page_offset = offset % (1024*1024);
+    // TODO: REWRITE!!!!! NEED PASS BLOCK SIZE FROM PLOOP!!!
+    // TODO: ADD DATA OFFSET!!!
+    int ploop_block_size = 1024*1024;
+    int data_page_number = offset / ploop_block_size;
+    int data_page_offset = offset % ploop_block_size;
     int data_page_real_place = ploop_bat[data_page_number];
-    unsigned int position_in_file = data_page_real_place * (1024*1024) + data_page_offset;
+    unsigned int position_in_file = data_page_real_place * ploop_block_size + data_page_offset;
 
-/*
+    /*
     cout<<"data_page_number: "<<data_page_number<<endl;
     cout<<"data_page_offset:"<<data_page_offset<<endl;
     cout<<"data_page_real_place:"<<data_page_real_place<<endl;
     cout<<"position_in_file: "<<position_in_file<<endl;
-*/
+    */
 
     ploop_global_file_handle.seekg(position_in_file);
     ploop_global_file_handle.read((char*)buf, len);
@@ -272,10 +287,10 @@ static int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata
 }
 
 static int ploop_write(const void *buf, u_int32_t len, u_int64_t offset, void *userdata) {
-    if (*(int *)userdata)
+    if (*(int *)userdata) {
         fprintf(stderr, "W - %lu, %u\n", offset, len);
+    }
 
-    //memcpy((char *)data + offset, buf, len);
     return 0;
 }
 
@@ -342,10 +357,15 @@ int main(int argc, char *argv[]) {
     }
 
     ploop_pvd_header* ploop_header = new ploop_pvd_header;
+
+    // read header
     read_header(ploop_header, file_path);
 
+    // read BAT tables
+    read_bat(ploop_header, file_path, ploop_bat);
+
     __u64 ploop_size = get_ploop_size_in_sectors(ploop_header);
-    init_ploop_userspace(ploop_size * 512);
+    init_ploop_userspace(ploop_size * BYTES_IN_SECTOR);
 
     system("modprobe nbd max_part=16 2>&1 >/dev/null");
     int is_read_only = 1;
