@@ -15,6 +15,11 @@ Requirements for Debian:
 apt-get install -y kpartx build-essential
 ```
 
+Requirements for CentOS:
+```bash
+yum install -y git gcc gcc-cpp make
+```
+
 You need only g++ and gcc for compiling this code.
 ```bash
 cd /usr/src
