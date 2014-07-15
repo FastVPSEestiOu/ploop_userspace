@@ -26,6 +26,8 @@ make
 Usage:
 ```bash
 ./ploop_userspace CTID
+or
+./ploop_userspace /vz/private/7777/root.hdd/root.hdd
 ```
 
 Mounting ploop file system to folder:
