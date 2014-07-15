@@ -17,7 +17,7 @@ apt-get install -y kpartx build-essential
 
 Requirements for CentOS:
 ```bash
-yum install -y git gcc gcc-cpp make
+yum install -y git gcc gcc-c++ make
 ```
 
 You need only g++ and gcc for compiling this code.
