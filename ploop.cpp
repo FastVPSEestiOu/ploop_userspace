@@ -49,6 +49,7 @@ ifstream ploop_global_file_handle;
 /* Cluster size in bytes */
 int global_ploop_cluster_size = 0; 
 int global_first_block_offset = 0;
+static int buse_debug = 1;
 
 // BAT block format:
 // https://github.com/pavel-odintsov/openvz_rhel6_kernel_mirror/blob/master/drivers/block/ploop/map.c
