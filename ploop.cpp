@@ -269,8 +269,8 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
 static int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata) {
     cout<<"We got request for reading from offset: "<<offset<<" length "<<len<< " bytes"<<endl;
 
-    assert(global_first_block_offset == 0);
-    assert(global_ploop_cluster_size == 0);
+    assert(global_first_block_offset != 0);
+    assert(global_ploop_cluster_size != 0);
 
     int data_page_number = offset / global_ploop_cluster_size;
     int data_page_offset = offset % global_ploop_cluster_size;
