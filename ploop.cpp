@@ -1,0 +1,346 @@
+/*
+
+Tool for mounting OpenVZ ploop images (openvz.org/Ploop) without support from kernel side on any kernel. Only read only mounting supported now. 
+License: GPLv2
+Author: pavel.odintsov@gmail.com
+
+*/
+
+#include <fstream>
+#include <iostream>
+#include <sys/types.h>
+#include <linux/types.h> 
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+#include <sys/wait.h>
+
+#include <map>
+
+#include "buse.h"
+
+using namespace std;
+
+
+// Смещение, которое нужно сделать, чтобы добраться до карты. Первые 64 байта - это хидер
+// sizeof(struct ploop_pvd_header) / sizeof(u32)
+#define PLOOP_MAP_OFFSET 16
+
+/* Compressed disk v1 signature */
+#define SIGNATURE_STRUCTURED_DISK_V1 "WithoutFreeSpace"
+
+/* Compressed disk v2 signature */
+#define SIGNATURE_STRUCTURED_DISK_V2 "WithouFreSpacExt"
+
+/* This defines slot in mapping page. Right now it is 32 bit
+ * and therefore it directly matches ploop1 structure. */
+typedef __u32 map_index_t;
+
+/* Эти переменные вынуждены быть глобальными, так как иного варианта работы с ними в BUSE нету */
+std::map<__u64, map_index_t> ploop_bat;
+ifstream ploop_global_file_handle;
+
+// Формат BAT блока:
+// https://github.com/pavel-odintsov/openvz_rhel6_kernel_mirror/blob/master/drivers/block/ploop/map.c
+// Очень важная функция в ядре: drivers/block/ploop/fmt_ploop1.c, ploop1_open
+
+// Структура взята: http://git.openvz.org/?p=ploop;a=blob;f=include/ploop1_image.h
+#pragma pack(push,1)
+struct ploop_pvd_header
+{
+    __u8  m_Sig[16];          /* Signature */
+    __u32 m_Type;             /* Disk type */
+    __u32 m_Heads;            /* heads count */
+    __u32 m_Cylinders;        /* tracks count */
+    __u32 m_Sectors;          /* Sectors per track count */
+    __u32 m_Size;             /* Size of disk in tracks */
+    union {                   /* Size of disk in 512-byte sectors */
+        struct {
+            __u32 m_SizeInSectors_v1;
+            __u32 Unused;
+        };
+        __u64 m_SizeInSectors_v2;
+    };
+    __u32 m_DiskInUse;        /* Disk in use */
+    __u32 m_FirstBlockOffset; /* First data block offset (in sectors) */
+    __u32 m_Flags;            /* Misc flags */
+    __u8  m_Reserved[8];      /* Reserved */
+};
+#pragma pack(pop)
+
+// Prototypes
+int get_ploop_version(struct ploop_pvd_header* header);
+__u64 get_ploop_size_in_sectors(struct ploop_pvd_header* header);
+
+__u64 get_ploop_size_in_sectors(struct ploop_pvd_header* header) {
+    int ploop_version = get_ploop_version(header);
+    __u64 disk_size = 0;
+
+    if (ploop_version == 1) {
+        disk_size = header->m_SizeInSectors_v1;
+    } else if (ploop_version == 2) {
+        disk_size = header->m_SizeInSectors_v2;
+    } else {
+        printf("Unexpected ploop version");
+        exit(1);
+    }
+
+    return disk_size; 
+}
+
+void print_ploop_header(struct ploop_pvd_header* header) {
+    int ploop_version = get_ploop_version(header);
+
+    printf("version: %d disk type: %d heads count: %d cylinder count: %d sector count: %d size in tracks: %d ", ploop_version, header->m_Type , header->m_Heads, header->m_Cylinders,
+        header->m_Sectors, header->m_Size);
+
+    __u64 disk_size = get_ploop_size_in_sectors(header);
+    printf("size in sectors: %llu ", header->m_SizeInSectors_v2);
+
+    printf("disk in use: %d first block offset: %d flags: %d",
+        header->m_DiskInUse, header->m_FirstBlockOffset, header->m_Flags);
+
+    printf("\n");
+}
+
+int get_ploop_version(struct ploop_pvd_header* header) {
+    if (!memcmp(header->m_Sig, SIGNATURE_STRUCTURED_DISK_V1, sizeof(header->m_Sig))) {
+        return 1;
+    }
+
+    if  (!memcmp(header->m_Sig, SIGNATURE_STRUCTURED_DISK_V2, sizeof(header->m_Sig))) {
+        return 2;
+    }
+
+    return -1;
+}
+
+
+// Прочесть BAT таблицу
+void read_bat(ploop_pvd_header* ploop_header, char* file_path) {
+
+}
+
+void read_header(ploop_pvd_header* ploop_header, char* file_path) {
+    cout<<"We process: "<<file_path<<endl;
+
+    struct stat stat_data;
+
+    if (stat(file_path, &stat_data) != 0) {
+        std::cout<<"Can't get stat data";
+        exit(1);
+    }
+
+    std::cout<<"Ploop file size is: "<<stat_data.st_size<<endl;
+
+    ifstream ploop_file(file_path, ios::in|ios::binary);
+
+    if (ploop_file.is_open()) {
+        ploop_file.read((char*)ploop_header, sizeof(ploop_pvd_header));
+
+        if (!ploop_file.good()) {
+            cout<<"Can't read header!"<<endl;
+            exit(1);
+        }
+
+        print_ploop_header(ploop_header);
+
+        // Размер блока ploop в байтах
+        int cluster_size = ploop_header->m_Sectors * 512;
+
+        // Смещение первого блока с данными в байтах
+        int first_data_block_offset = ploop_header->m_FirstBlockOffset * 512;
+       
+        // Теперь зная размер блока и смещение блока с данными можно посчитать число блоков BAT
+        if (first_data_block_offset % cluster_size != 0) {
+            cout <<"Internal error! Data offset should be in start of cluster"<<endl;
+            exit(1);
+        }
+
+        // Один BAT может адресовать около 250 гб данных, так что нам нужно их больше в случае крупных дисков 
+        int bat_blocks_number = first_data_block_offset/cluster_size; 
+
+        cout<<"We have "<<bat_blocks_number<<" BAT blocks"<<endl;
+
+        // Общее число не пустых блоков во всех BAT
+        int not_null_blocks = 0;
+ 
+        // глобальный индекс в таблице маппинга 
+        int global_index = 0;
+
+        for (int bat_index = 0; bat_index < bat_blocks_number; bat_index ++) {
+            // всегда выделяем объем данных по размеру кластера
+            map_index_t* ploop_map = (map_index_t*)malloc(cluster_size);
+
+            int map_size = 0;
+
+            if (bat_index == 0) { 
+                // первый BAT блок у нас после заголовка ploop
+                map_size = cluster_size - sizeof(ploop_pvd_header);
+            } else {
+                // а тут весь блок наш, от начала до самого конца
+                map_size = cluster_size;
+            }
+
+            // read data from disk
+            ploop_file.read((char*)ploop_map, map_size); 
+  
+            if (!ploop_file.good()) {
+                cout<<"Can't read map from file!"<<endl;
+                exit(1);
+            }   
+
+ 
+            // вообще если размер блока нестандартный и на гранцие блока попадется половина байта и весь не влезет
+            // то будет косяк
+            if (map_size % sizeof(map_index_t) != 0) {
+                cout<<"Internal error! Can't count number of slots in map because it's not an integer"<<endl;
+                exit(1);
+            }
+
+            int number_of_slots_in_map = map_size / sizeof(map_index_t);
+
+            cout<<"We have "<<number_of_slots_in_map<<" slots in "<<bat_index<<" map"<<endl;
+
+            for (int i = 0; i < number_of_slots_in_map; i++) {
+                if (ploop_map[i] != 0) {
+                    // заносим в общую таблицу размещения файлов не пустые блоки
+                    ploop_bat[global_index] = ploop_map[i];
+                    not_null_blocks++;
+                }
+
+                global_index++;
+            }
+        }
+
+        std::cout<<"Number of non zero blocks in map: "<<not_null_blocks<<endl;
+        std::cout<<"We can store about "<<(__u32)(not_null_blocks)*cluster_size<< " bytes here"<<endl;
+    } else {
+        std::cout<<"Can't open ploop file"<<endl;
+        exit(1);
+    }
+
+
+    for (std::map<__u64, map_index_t>::iterator ii = ploop_bat.begin(); ii != ploop_bat.end(); ++ii) {
+        //std::cout<<"index: "<<ii->first<<" key: "<<ii->second<<endl;
+    } 
+}
+
+static int buse_debug = 1;
+
+static int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata) {
+    cout<<"We got request for reading from offset: "<<offset<<" length "<<len<< " bytes"<<endl;
+
+    int data_page_number = offset / (1024*1024);
+    int data_page_offset = offset % (1024*1024);
+    int data_page_real_place = ploop_bat[data_page_number];
+    unsigned int position_in_file = data_page_real_place * (1024*1024) + data_page_offset;
+
+/*
+    cout<<"data_page_number: "<<data_page_number<<endl;
+    cout<<"data_page_offset:"<<data_page_offset<<endl;
+    cout<<"data_page_real_place:"<<data_page_real_place<<endl;
+    cout<<"position_in_file: "<<position_in_file<<endl;
+*/
+
+    ploop_global_file_handle.seekg(position_in_file);
+    ploop_global_file_handle.read((char*)buf, len);
+   
+    if (!ploop_global_file_handle.good()) {
+        cout<<"Can't read data from ploop file for nbd!"<<endl;
+        exit(1);
+    }   
+ 
+    return 0;
+}
+
+static int ploop_write(const void *buf, u_int32_t len, u_int64_t offset, void *userdata) {
+    if (*(int *)userdata)
+        fprintf(stderr, "W - %lu, %u\n", offset, len);
+
+    //memcpy((char *)data + offset, buf, len);
+    return 0;
+}
+
+static void ploop_disc(void *userdata) {
+  (void)(userdata);
+  fprintf(stderr, "Received a disconnect request.\n");
+}
+
+static int ploop_flush(void *userdata) {
+  (void)(userdata);
+  fprintf(stderr, "Received a flush request.\n");
+  return 0;
+}
+
+static int ploop_trim(u_int64_t from, u_int32_t len, void *userdata) {
+  (void)(userdata);
+  fprintf(stderr, "T - %lu, %u\n", from, len);
+  return 0;
+}
+
+
+static struct buse_operations ploop_userspace;
+
+void init_ploop_userspace(__u64 disk_size_in_bytes) {
+    ploop_userspace.read = ploop_read;
+    ploop_userspace.size = disk_size_in_bytes;
+
+    //ploop_userspace.write = ploop_write;
+    //ploop_userspace.disc = ploop_disc;
+    //ploop_userspace.flush = ploop_flush;
+    //ploop_userspace.trim = ploop_trim;
+}
+
+int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        cout<<"Please specify CTID"<<endl;
+        exit(1);
+    } 
+
+    char* nbd_device_name = (char*)"/dev/nbd0";
+    char file_path[256];
+    sprintf(file_path, "/vz/private/%s/root.hdd/root.hdd", argv[1]);
+
+    ploop_pvd_header* ploop_header = new ploop_pvd_header;
+    read_header(ploop_header, file_path);
+
+    __u64 ploop_size = get_ploop_size_in_sectors(ploop_header);
+    init_ploop_userspace(ploop_size * 512);
+
+    system("modprobe nbd max_part=16 2>&1 >/dev/null");
+    int is_read_only = 1;
+
+    // set device as read only
+    if (is_read_only) {
+        char blockdev_command[256];
+        sprintf(blockdev_command, "blockdev --setro %s 2>&1 >/dev/null", nbd_device_name);
+
+        cout<<"Set device "<<nbd_device_name<<" as read only\n";
+        system(blockdev_command);
+    }
+
+    if (fork()) {
+        //parent
+        sleep(2);
+    
+        cout<<"Try to found partitions on ploop device"<<endl;
+        char partx_command[128];
+        sprintf(partx_command, "partx -a %s 2>&1 >/dev/null", nbd_device_name);
+        system(partx_command);
+
+        cout<<"You could mount ploop filesystem with command: "<<"mount -r -o noload "<<nbd_device_name<<"p1 /mnt"<<endl;
+        
+        // wait for processes
+        int status = 0;
+        wait(&status);
+    } else {
+        ploop_global_file_handle.open(file_path, ios::in|ios::binary);
+        buse_main(nbd_device_name, &ploop_userspace, (void *)&buse_debug);
+    }
+    // ploop_global_file_handle.Close()
+    // delete (ploop_header);
+}
