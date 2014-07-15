@@ -14,6 +14,7 @@ You need only g++ and gcc for compiling this code.
 ```bash
 cd /usr/src
 git clone https://github.com/FastVPSEestiOu/ploop_userspace.git
+cd ploop_userspace
 make
 ```
 
