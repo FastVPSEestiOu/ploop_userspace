@@ -402,7 +402,7 @@ int main(int argc, char *argv[]) {
         sprintf(first_nbd_partition_path, "%sp1", nbd_device_name);
 
         if (!file_exists(first_nbd_partition_path)) {
-            cout<<"First ploop partition was not detected properly, please call partx/partprobla manually";
+            cout<<"First ploop partition was not detected properly, please call partx/partprobe manually";
         }
 
         cout<<"You could mount ploop filesystem with command: "<<"mount -r -o noload "<<nbd_device_name<<"p1 /mnt"<<endl;
