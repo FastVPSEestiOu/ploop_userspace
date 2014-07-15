@@ -46,6 +46,8 @@ typedef __u32 map_index_t;
 typedef std::map<__u64, map_index_t> bat_table_type;
 bat_table_type ploop_bat;
 ifstream ploop_global_file_handle;
+/* Cluster size in bytes */
+int global_ploop_cluster_size = 0; 
 
 // BAT block format:
 // https://github.com/pavel-odintsov/openvz_rhel6_kernel_mirror/blob/master/drivers/block/ploop/map.c
@@ -179,6 +181,8 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
         // Размер блока ploop в байтах
         int cluster_size = ploop_header->m_Sectors * BYTES_IN_SECTOR;
 
+        global_ploop_cluster_size = cluster_size;
+
         // Смещение первого блока с данными в байтах
         int first_data_block_offset = ploop_header->m_FirstBlockOffset * BYTES_IN_SECTOR;
        
@@ -260,9 +264,8 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
 static int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata) {
     cout<<"We got request for reading from offset: "<<offset<<" length "<<len<< " bytes"<<endl;
 
-    // TODO: REWRITE!!!!! NEED PASS BLOCK SIZE FROM PLOOP!!!
     // TODO: ADD DATA OFFSET!!!
-    int ploop_block_size = 1024*1024;
+    int ploop_block_size = global_ploop_cluster_size * 1024;
     int data_page_number = offset / ploop_block_size;
     int data_page_offset = offset % ploop_block_size;
     int data_page_real_place = ploop_bat[data_page_number];
