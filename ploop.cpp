@@ -124,6 +124,18 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path) {
 
 }
 
+int file_exists(char* path) {
+    struct stat stat_data;
+
+    int stat_res = stat(file_path, &stat_data);
+
+    if (stat_res == 0) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
 void read_header(ploop_pvd_header* ploop_header, char* file_path) {
     cout<<"We process: "<<file_path<<endl;
 
@@ -304,6 +316,11 @@ int main(int argc, char *argv[]) {
     char* nbd_device_name = (char*)"/dev/nbd0";
     char file_path[256];
     sprintf(file_path, "/vz/private/%s/root.hdd/root.hdd", argv[1]);
+
+    if (!file_exists(file_path)) {
+        cout<<"Path "<<file_path<<" is not exists, please check CTID number"<<endl;
+        exit(1);
+    }
 
     ploop_pvd_header* ploop_header = new ploop_pvd_header;
     read_header(ploop_header, file_path);
