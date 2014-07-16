@@ -322,7 +322,7 @@ static int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata
 
     // Тут мы рассматриваем случай, когда данные попадают на два блока одновременно 
     // TODO: реализовать
-    if (global_first_block_offset + len > global_ploop_cluster_size) {
+    if (data_page_offset + len > global_ploop_cluster_size) {
         cout<<"DATA IS OVERLAP WITH NEXT BLOCK!!! NOT IMPLEMENTED YET!!!"<<endl;
     }
 
