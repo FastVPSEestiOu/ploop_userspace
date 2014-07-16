@@ -19,6 +19,7 @@ Author: pavel.odintsov@gmail.com
 #include <sys/wait.h>
 #include <assert.h>
 
+#include <vector>
 #include <map>
 
 #include "buse.h"
