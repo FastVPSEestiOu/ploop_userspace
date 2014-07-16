@@ -383,15 +383,38 @@ int main(int argc, char *argv[]) {
 
     if (is_digit_line(argv[1])) {
         // We got CTID number
-        sprintf(file_path, "/vz/private/%s/root.hdd/root.hdd", argv[1]);
+ 
+        vector<string> root_hdd_paths;
+        // openvz
+        root_hdd_paths.push_back("/vz/private/%s/root.hdd/root.hdd");
+        // parallels cloud server
+        root_hdd_paths.push_back("/vz/private/%s/root.hdd/root.hds");
+        // openvz at Debian
+        root_hdd_paths.push_back("/var/lib/vz/private/%s/root.hdd/root.hdd");
+
+        int we_found_root_hdd = false;
+        for( vector<string>::iterator ii = root_hdd_paths.begin(); ii != root_hdd_paths.end(); ++ii) {
+            sprintf(file_path, ii->c_str(), argv[1]);
+
+            // If we found file we stop loop
+            if (file_exists(file_path)) {
+                we_found_root_hdd = true;
+                break;
+            }
+        }
+
+        if (!we_found_root_hdd) {
+            cout<<"We cant find root.hdd for this container"<<endl;
+            exit(1);
+        } 
     } else {
         // We got path to root.hdd
         sprintf(file_path, "%s", argv[1]);
-    }
 
-    if (!file_exists(file_path)) {
-        cout<<"Path "<<file_path<<" is not exists, please check CTID number"<<endl;
-        exit(1);
+        if (!file_exists(file_path)) {
+            cout<<"Path "<<file_path<<" is not exists, please check CTID number"<<endl;
+            exit(1);
+        }   
     }
 
     ploop_pvd_header* ploop_header = new ploop_pvd_header;
