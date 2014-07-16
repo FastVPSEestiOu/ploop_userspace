@@ -154,7 +154,7 @@ void read_gpt(ploop_pvd_header* ploop_header, char* file_path, int* result) {
         // GPT table starts from 512byte on 512b sector or from 4096byte with 4k sector
         ploop_file.seekg(ploop_header->m_FirstBlockOffset * BYTES_IN_SECTOR + BYTES_IN_SECTOR); 
         ploop_file.read((char*)&guid_header, sizeof(guid_header));
-        ploop_file_Close();
+        ploop_file.close();
 
         if (guid_header == GPT_SIGNATURE) {
             result = 1;
@@ -189,7 +189,7 @@ void read_header(ploop_pvd_header* ploop_header, char* file_path) {
             exit(1);
         }
 
-        ploop_file..Close()
+        ploop_file.close()
 
         print_ploop_header(ploop_header);
     } else {
@@ -278,7 +278,7 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
             }
         }
 
-        ploop_file.Close();
+        ploop_file.close();
     
         std::cout<<"Number of non zero blocks in map: "<<not_null_blocks<<endl;
         std::cout<<"We can store about "<<(__u32)(not_null_blocks)*cluster_size<< " bytes here"<<endl;
@@ -451,6 +451,6 @@ int main(int argc, char *argv[]) {
         ploop_global_file_handle.open(file_path, ios::in|ios::binary);
         buse_main(nbd_device_name, &ploop_userspace, (void *)&buse_debug);
     }
-    // ploop_global_file_handle.Close()
+    // ploop_global_file_handle.close()
     // delete (ploop_header);
 }
