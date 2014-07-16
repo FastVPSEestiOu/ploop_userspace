@@ -296,7 +296,7 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
 }
 
 static int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata) {
-    cout<<"We got request for reading from offset: "<<offset<<" length "<<len<< " bytes"<<endl;
+    cout<<"We got request for reading from offset: "<<offset<<" length "<<len<< " bytes ";
 
     assert(global_first_block_offset != 0);
     assert(global_ploop_cluster_size != 0);
@@ -307,12 +307,12 @@ static int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata
     int data_page_real_place = ploop_bat[data_page_number];
     unsigned int position_in_file = global_first_block_offset + (data_page_real_place-1) * global_ploop_cluster_size + data_page_offset;
 
-    /*
-    cout<<"data_page_number: "<<data_page_number<<endl;
-    cout<<"data_page_offset:"<<data_page_offset<<endl;
-    cout<<"data_page_real_place:"<<data_page_real_place<<endl;
-    cout<<"position_in_file: "<<position_in_file<<endl;
-    */
+    cout<<endl; 
+    cout<<"data_page_number: "<<data_page_number<<" ";
+    cout<<"data_page_real_place:"<<data_page_real_place<<" ";
+    cout<<"data_page__readl_offset:"<<data_page_offset<<" ";
+    cout<<"position_in_file: "<<position_in_file<<" ";
+    cout<<endl;
 
     ploop_global_file_handle.seekg(position_in_file);
     ploop_global_file_handle.read((char*)buf, len);
