@@ -316,7 +316,7 @@ static int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata
     // Где данные находятся реально
     map_index_t data_page_real_place = map_item->second;
 
-    assert(data_page_real_place != );
+    assert(data_page_real_place != 0);
 
     unsigned int position_in_file = global_first_block_offset + (data_page_real_place-1) * global_ploop_cluster_size + data_page_offset;
 
