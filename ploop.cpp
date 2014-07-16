@@ -313,10 +313,18 @@ static int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata
         exit(1);
     } 
 
+    // Где данные находятся реально
     map_index_t data_page_real_place = map_item->second;
 
+    assert(data_page_real_place != );
+
     unsigned int position_in_file = global_first_block_offset + (data_page_real_place-1) * global_ploop_cluster_size + data_page_offset;
-    // TODO: возможен случай, когда данные размещены на более чем одном плуп блоке и они НЕ последовательные
+
+    // Тут мы рассматриваем случай, когда данные попадают на два блока одновременно 
+    // TODO: реализовать
+    if (global_first_block_offset + len > global_ploop_cluster_size) {
+        cout<<"DATA IS OVERLAP WITH NEXT BLOCK!!! NOT IMPLEMENTED YET!!!"<<endl;
+    }
 
     cout<<endl;
     cout<<"global offset:"<<global_first_block_offset<<" ";
