@@ -144,6 +144,29 @@ int file_exists(char* file_path) {
     }
 }
 
+#define GPT_SIGNATURE 0x5452415020494645ULL 
+void read_gpt(ploop_pvd_header* ploop_header, char* file_path, int* result) {
+    ifstream ploop_file(file_path, ios::in|ios::binary);
+
+    if (ploop_file.is_open()) {
+        unsigned long long guid_header;
+
+        // GPT table starts from 512byte on 512b sector or from 4096byte with 4k sector
+        ploop_file.seekg(ploop_header->m_FirstBlockOffset * BYTES_IN_SECTOR + BYTES_IN_SECTOR); 
+        ploop_file.read((char*)&guid_header, sizeof(guid_header));
+        ploop_file_Close();
+
+        if (guid_header == GPT_SIGNATURE) {
+            result = 1;
+        } else {
+            result = 0;
+        }
+    } else {
+        std::cout<<"Can't open ploop file"<<endl;
+        exit(1);
+    }
+}
+
 void read_header(ploop_pvd_header* ploop_header, char* file_path) {
     cout<<"We process: "<<file_path<<endl;
 
@@ -165,6 +188,8 @@ void read_header(ploop_pvd_header* ploop_header, char* file_path) {
             cout<<"Can't read header!"<<endl;
             exit(1);
         }
+
+        ploop_file..Close()
 
         print_ploop_header(ploop_header);
     } else {
@@ -253,6 +278,8 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
             }
         }
 
+        ploop_file.Close();
+    
         std::cout<<"Number of non zero blocks in map: "<<not_null_blocks<<endl;
         std::cout<<"We can store about "<<(__u32)(not_null_blocks)*cluster_size<< " bytes here"<<endl;
     } else {
@@ -373,6 +400,16 @@ int main(int argc, char *argv[]) {
 
     // read BAT tables
     read_bat(ploop_header, file_path, ploop_bat);
+
+    // read GPT header
+    int gpt_is_found = 0;
+    read_gpt(plop_header, file_path, &gpt_is_found);
+
+    if (gpt_is_found) {
+        cout<<"We found GPT table on this disk"<<endl;
+    } else {
+        cout<<"We can't found GPT table on this disk"<<endl;
+    }
 
     __u64 ploop_size = get_ploop_size_in_sectors(ploop_header);
     init_ploop_userspace(ploop_size * BYTES_IN_SECTOR);
