@@ -233,10 +233,10 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
         // глобальный индекс в таблице маппинга 
         int global_index = 0;
 
-        for (int bat_index = 0; bat_index < bat_blocks_number; bat_index ++) {
-            // всегда выделяем объем данных по размеру кластера
-            map_index_t* ploop_map = (map_index_t*)malloc(cluster_size);
+        // всегда выделяем объем данных по размеру кластера
+        map_index_t* ploop_map = (map_index_t*)malloc(cluster_size);
 
+        for (int bat_index = 0; bat_index < bat_blocks_number; bat_index ++) {
             int map_size = 0;
 
             if (bat_index == 0) { 
@@ -439,7 +439,7 @@ int main(int argc, char *argv[]) {
         sprintf(first_nbd_partition_path, "%sp1", nbd_device_name);
 
         if (!file_exists(first_nbd_partition_path)) {
-            cout<<"First ploop partition was not detected properly, please call partx/partprobe manually";
+            cout<<"First ploop partition was not detected properly, please call partx/partprobe manually"<<endl;
         }
 
         cout<<"You could mount ploop filesystem with command: "<<"mount -r -o noload "<<nbd_device_name<<"p1 /mnt"<<endl;
