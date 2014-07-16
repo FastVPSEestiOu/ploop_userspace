@@ -403,7 +403,7 @@ int main(int argc, char *argv[]) {
 
     // read GPT header
     int gpt_is_found = 0;
-    read_gpt(plop_header, file_path, &gpt_is_found);
+    read_gpt(ploop_header, file_path, &gpt_is_found);
 
     if (gpt_is_found) {
         cout<<"We found GPT table on this disk"<<endl;
