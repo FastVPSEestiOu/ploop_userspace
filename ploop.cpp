@@ -157,9 +157,9 @@ void read_gpt(ploop_pvd_header* ploop_header, char* file_path, int* result) {
         ploop_file.close();
 
         if (guid_header == GPT_SIGNATURE) {
-            result = 1;
+            *result = 1;
         } else {
-            result = 0;
+            *result = 0;
         }
     } else {
         std::cout<<"Can't open ploop file"<<endl;
@@ -189,7 +189,7 @@ void read_header(ploop_pvd_header* ploop_header, char* file_path) {
             exit(1);
         }
 
-        ploop_file.close()
+        ploop_file.close();
 
         print_ploop_header(ploop_header);
     } else {
