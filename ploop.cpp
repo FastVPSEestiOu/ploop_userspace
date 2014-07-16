@@ -278,6 +278,7 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
             }
         }
 
+        free(ploop_map);
         ploop_file.close();
     
         std::cout<<"Number of non zero blocks in map: "<<not_null_blocks<<endl;
