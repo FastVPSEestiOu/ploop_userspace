@@ -304,13 +304,22 @@ static int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata
     int data_page_number = offset / global_ploop_cluster_size;
     int data_page_offset = offset % global_ploop_cluster_size;
 
-    int data_page_real_place = ploop_bat[data_page_number];
+    bat_table_type::iterator map_item = ploop_bat.find(data_page_number);
+
+    if (map_item == ploop_bat.end()) {
+        cout<<"We can't get mapping for ploop block "<<data_page_number<<endl;
+        exit(1);
+    } 
+
+    int data_page_real_place = map_item->second;
+
     unsigned int position_in_file = global_first_block_offset + (data_page_real_place-1) * global_ploop_cluster_size + data_page_offset;
 
-    cout<<endl; 
+    cout<<endl;
+    cout<<"global offset:"<<global_first_block_offset<<" ";
     cout<<"data_page_number: "<<data_page_number<<" ";
     cout<<"data_page_real_place:"<<data_page_real_place<<" ";
-    cout<<"data_page__readl_offset:"<<data_page_offset<<" ";
+    cout<<"data_page__read_offset:"<<data_page_offset<<" ";
     cout<<"position_in_file: "<<position_in_file<<" ";
     cout<<endl;
 
