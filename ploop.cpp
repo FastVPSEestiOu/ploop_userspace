@@ -314,12 +314,13 @@ static int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata
     int data_page_real_place = map_item->second;
 
     unsigned int position_in_file = global_first_block_offset + (data_page_real_place-1) * global_ploop_cluster_size + data_page_offset;
+    // TODO: возможен случай, когда данные размещены на более чем одном плуп блоке и они НЕ последовательные
 
     cout<<endl;
     cout<<"global offset:"<<global_first_block_offset<<" ";
     cout<<"data_page_number: "<<data_page_number<<" ";
     cout<<"data_page_real_place:"<<data_page_real_place<<" ";
-    cout<<"data_page__read_offset:"<<data_page_offset<<" ";
+    cout<<"Offset for current page:"<<data_page_offset<<" ";
     cout<<"position_in_file: "<<position_in_file<<" ";
     cout<<endl;
 
