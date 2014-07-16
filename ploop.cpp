@@ -45,7 +45,7 @@ using namespace std;
 typedef __u32 map_index_t;
 
 /* Эти переменные вынуждены быть глобальными, так как иного варианта работы с ними в BUSE нету */
-typedef std::map<__u64, map_index_t> bat_table_type;
+typedef std::map<u_int64_t, map_index_t> bat_table_type;
 bat_table_type ploop_bat;
 ifstream ploop_global_file_handle;
 /* Cluster size in bytes */
@@ -271,6 +271,8 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
             for (int i = 0; i < number_of_slots_in_map; i++) {
                 if (ploop_map[i] != 0) {
                     // заносим в общую таблицу размещения файлов не пустые блоки
+                    // Как можно догадаться, global_index начинается с нуля, а вот целевой блок, всегда считается с 1,
+                    // так как 0 означает, что блок пуст
                     ploop_bat[global_index] = ploop_map[i];
                     not_null_blocks++;
                 }
@@ -290,7 +292,7 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
     }
 
 
-    for (std::map<__u64, map_index_t>::iterator ii = ploop_bat.begin(); ii != ploop_bat.end(); ++ii) {
+    for (bat_table_type::iterator ii = ploop_bat.begin(); ii != ploop_bat.end(); ++ii) {
         //std::cout<<"index: "<<ii->first<<" key: "<<ii->second<<endl;
     } 
 }
@@ -301,7 +303,7 @@ static int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata
     assert(global_first_block_offset != 0);
     assert(global_ploop_cluster_size != 0);
 
-    int data_page_number = offset / global_ploop_cluster_size;
+    u_int64_t data_page_number = offset / global_ploop_cluster_size;
     int data_page_offset = offset % global_ploop_cluster_size;
 
     bat_table_type::iterator map_item = ploop_bat.find(data_page_number);
@@ -311,7 +313,7 @@ static int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata
         exit(1);
     } 
 
-    int data_page_real_place = map_item->second;
+    map_index_t data_page_real_place = map_item->second;
 
     unsigned int position_in_file = global_first_block_offset + (data_page_real_place-1) * global_ploop_cluster_size + data_page_offset;
     // TODO: возможен случай, когда данные размещены на более чем одном плуп блоке и они НЕ последовательные
