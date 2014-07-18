@@ -309,16 +309,19 @@ static int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata
     bat_table_type::iterator map_item = ploop_bat.find(data_page_number);
 
     if (map_item == ploop_bat.end()) {
-        cout<<"We can't get mapping for ploop block "<<data_page_number<<endl;
-        exit(1);
-    } 
+        cout<<"WARNING! WARNING! WARNING! We can't get mapping for ploop block "<<data_page_number<<endl;
+        // It's normal because ploops is sparse and sometimes ext4 tries to read blank areas
+        memset(buf, 0, len);
+
+        return 0;
+    }
 
     // Где данные находятся реально
     map_index_t data_page_real_place = map_item->second;
 
     assert(data_page_real_place != 0);
 
-    unsigned int position_in_file = global_first_block_offset + (data_page_real_place-1) * global_ploop_cluster_size + data_page_offset;
+    u_int64_t position_in_file = global_first_block_offset + (data_page_real_place-1) * global_ploop_cluster_size + data_page_offset;
 
     // Тут мы рассматриваем случай, когда данные попадают на два блока одновременно 
     // TODO: реализовать
