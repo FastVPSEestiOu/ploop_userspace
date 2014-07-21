@@ -82,6 +82,7 @@ struct ploop_pvd_header
 #pragma pack(pop)
 
 /* Prototypes */
+void consistency_check();
 void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& ploop_bat);
 bool is_digit_line(char* string);
 int file_exists(char* file_path);
@@ -396,7 +397,16 @@ bool is_digit_line(char* string) {
     return true;
 }
 
+void consistency_check() {
+    if (sizeof(ploop_pvd_header) != 64) {
+        std::cout<<"UNEXPECTED BAHAVIOUR!!!! INCORRECT SIZE OF PLOOP HEADER"<<endl;
+        exit(1);
+    }
+}
+
 int main(int argc, char *argv[]) {
+    consistency_check();
+
     if (argc < 2) {
         cout<<"Please specify CTID or path to ploop image"<<endl;
         exit(1);
