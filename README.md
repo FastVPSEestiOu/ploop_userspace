@@ -59,6 +59,12 @@ For debugging purposes you can add flag for dump all I/O operations:
 TRACE_OPERATIONS=1 ./ploop_userspace 1202
 ```
 
+Remarks about I/O scheduler for NBD (you should aware of cfq scheduler because it can broke nbd):
+* https://onapp.zendesk.com/entries/42013023-NBD-Scheduler-set-incorrectly
+* https://github.com/yoe/nbd
+* https://www.mail-archive.com/git-commits-head@vger.kernel.org/msg41533.html
+
+
 FAQ:
 * Can I get direct access to partitions inside ploop? Yes!
 * Can I get direct access to the whole block device inside ploop? Yes!
