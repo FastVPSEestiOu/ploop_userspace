@@ -54,6 +54,11 @@ Try to found partitions on ploop device
 You could mount ploop filesystem with command: mount -r -o noload /dev/nbd0p1 /mnt
 ```
 
+For debugging purposes you can add flag for dump all I/O operations:
+```bash
+TRACE_OPERATIONS=1 ./ploop_userspace 1202
+```
+
 FAQ:
 * Can I get direct access to partitions inside ploop? Yes!
 * Can I get direct access to the whole block device inside ploop? Yes!
