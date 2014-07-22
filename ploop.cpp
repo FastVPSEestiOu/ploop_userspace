@@ -82,6 +82,7 @@ struct ploop_pvd_header
 #pragma pack(pop)
 
 /* Prototypes */
+bool find_ext4_magic(ploop_pvd_header* ploop_header, char* file_path, __u64 offset);
 void consistency_check();
 void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& ploop_bat);
 bool is_digit_line(char* string);
@@ -167,6 +168,31 @@ void read_gpt(ploop_pvd_header* ploop_header, char* file_path, int* result) {
         std::cout<<"Can't open ploop file"<<endl;
         exit(1);
     }
+}
+
+// Функция для поиска сигнатур файловой системы ext4
+bool find_ext4_magic(ploop_pvd_header* ploop_header, char* file_path, __u64 offset) {
+    ifstream ploop_file(file_path, ios::in|ios::binary);
+
+    if (ploop_file.is_open()) {
+        __u32 ext4_magic = 0;
+        // 0x438 - смещение magic short uint внутри файловой системы
+        ploop_file.seekg(ploop_header->m_FirstBlockOffset * BYTES_IN_SECTOR + offset + 0x438);
+        ploop_file.read((char*)&ext4_magic, sizeof(ext4_magic));
+        ploop_file.close(); 
+    
+        // magic number взят /usr/share/misc/magic 
+        if (ext4_magic == 0xEF53) {
+            return true;
+        } else {
+            return false;
+        }
+        
+    } else {
+        std::cout<<"Can't open ploop file"<<endl;
+        exit(1);
+    }
+
 }
 
 void read_header(ploop_pvd_header* ploop_header, char* file_path) {
@@ -467,6 +493,21 @@ int main(int argc, char *argv[]) {
         cout<<"We found GPT table on this disk"<<endl;
     } else {
         cout<<"We can't found GPT table on this disk"<<endl;
+    }
+
+    bool ext4_found = false;
+
+    // По-хорошему, конечно же, нужно читать GPT, но мы знаем, что ploop создает первый раздел
+    // по смещению первого блока данных
+    if (find_ext4_magic(ploop_header, file_path, global_ploop_cluster_size)) {
+        ext4_found = true;
+        cout<<"We found ext4 signature at first partition block"
+    }
+
+    // Также из-за багов в скрипте vps_reinstall фс может быть создана прямо на первом блоке диска
+    if (find_ext4_magic(ploop_header, file_path, 0)) {
+        ext4_found = true;
+        cout<<"We found ext4 signature at first block of disk. This fs created over block device without GPT"
     }
 
     __u64 ploop_size = get_ploop_size_in_sectors(ploop_header);
