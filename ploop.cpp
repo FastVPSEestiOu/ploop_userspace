@@ -47,7 +47,7 @@ typedef __u32 map_index_t;
 /* Эти переменные вынуждены быть глобальными, так как иного варианта работы с ними в BUSE нету */
 typedef std::map<u_int64_t, map_index_t> bat_table_type;
 bat_table_type ploop_bat;
-FILE* ploop_global_file_handle = NULL;
+int ploop_global_file_handle = NULL;
 /* Cluster size in bytes */
 int global_ploop_cluster_size = 0; 
 int global_first_block_offset = 0;
@@ -313,7 +313,7 @@ int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata) {
 
 // Функция обертка, чтобы читать ploop как блочное устройство 
 int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset) {
-    FILE* file_handle = ploop_global_file_handle;
+    int file_handle = ploop_global_file_handle;
 
     if (TRACE_REQUESTS) {
         cout<<"We got request for reading from offset: "<<offset<<" length "<<len<< " bytes "<<endl;
@@ -487,7 +487,7 @@ int main(int argc, char *argv[]) {
     read_bat(ploop_header, file_path, ploop_bat);
 
     // open ploop file for read_gpt and find_ext4
-    ploop_global_file_handle = fopen(file_path, "rb");
+    ploop_global_file_handle = open(file_path, O_RDONLY);
 
     // read GPT header
     int gpt_is_found = 0;
@@ -581,7 +581,7 @@ int main(int argc, char *argv[]) {
         int status = 0;
         wait(&status);
     } else {
-        ploop_global_file_handle = fopen(file_path, "rb");
+        ploop_global_file_handle = open(file_path, O_RDONLY);
         buse_main(nbd_device_name, &ploop_userspace, (void *)&buse_debug);
     }
     // close(ploop_global_file_handle)
