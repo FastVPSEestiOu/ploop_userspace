@@ -53,6 +53,8 @@ int global_ploop_cluster_size = 0;
 int global_first_block_offset = 0;
 static int buse_debug = 1;
 
+bool TRACE_REQUESTS = 0;
+
 // BAT block format:
 // https://github.com/pavel-odintsov/openvz_rhel6_kernel_mirror/blob/master/drivers/block/ploop/map.c
 // Очень важная функция в ядре: drivers/block/ploop/fmt_ploop1.c, ploop1_open
@@ -343,13 +345,15 @@ int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset) {
         cout<<"DATA IS OVERLAP WITH NEXT BLOCK!!! NOT IMPLEMENTED YET!!!"<<endl;
     }
 
-    cout<<endl;
-    cout<<"global offset:"<<global_first_block_offset<<" ";
-    cout<<"data_page_number: "<<data_page_number<<" ";
-    cout<<"data_page_real_place:"<<data_page_real_place<<" ";
-    cout<<"Offset for current page:"<<data_page_offset<<" ";
-    cout<<"position_in_file: "<<position_in_file<<" ";
-    cout<<endl;
+    if (TRACE_REQUESTS) {
+        cout<<endl;
+        cout<<"global offset:"<<global_first_block_offset<<" ";
+        cout<<"data_page_number: "<<data_page_number<<" ";
+        cout<<"data_page_real_place:"<<data_page_real_place<<" ";
+        cout<<"Offset for current page:"<<data_page_offset<<" ";
+        cout<<"position_in_file: "<<position_in_file<<" ";
+        cout<<endl;
+    }
 
     ploop_global_file_handle.seekg(position_in_file);
     ploop_global_file_handle.read((char*)buf, len);
@@ -418,6 +422,11 @@ void consistency_check() {
 }
 
 int main(int argc, char *argv[]) {
+    if (getenv("TRACE_OPERATIONS")) {
+        TRACE_REQUESTS = true;
+    }
+
+
     consistency_check();
 
     if (argc < 2) {
