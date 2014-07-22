@@ -84,7 +84,7 @@ struct ploop_pvd_header
 #pragma pack(pop)
 
 /* Prototypes */
-int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset, FILE* file_handle);
+int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset);
 bool find_ext4_magic(ploop_pvd_header* ploop_header, char* file_path, __u64 offset);
 void consistency_check();
 void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& ploop_bat);
@@ -308,11 +308,13 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
 }
 
 int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata) {
-    return ploop_read_as_block_device(buf, len, offset, ploop_global_file_handle); 
+    return ploop_read_as_block_device(buf, len, offset); 
 };
 
 // Функция обертка, чтобы читать ploop как блочное устройство 
-int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset, FILE* file_handle) {
+int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset) {
+    FILE* file_handle = ploop_global_file_handle;
+
     if (TRACE_REQUESTS) {
         cout<<"We got request for reading from offset: "<<offset<<" length "<<len<< " bytes "<<endl;
     }
