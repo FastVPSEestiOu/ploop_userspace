@@ -192,17 +192,17 @@ void read_header(ploop_pvd_header* ploop_header, char* file_path) {
 
     std::cout<<"Ploop file size is: "<<stat_data.st_size<<endl;
 
-    ifstream ploop_file(file_path, ios::in|ios::binary);
+    int file_handle =  open(file_path, O_RDONLY);
 
-    if (ploop_file.is_open()) {
-        ploop_file.read((char*)ploop_header, sizeof(ploop_pvd_header));
+    if (file_handle) {
+        int pread_result = pread(file_handle, (char*)ploop_header, sizeof(ploop_pvd_header), 0);
 
-        if (!ploop_file.good()) {
+        if (pread_result == -1) {
             cout<<"Can't read header!"<<endl;
             exit(1);
         }
 
-        ploop_file.close();
+        close(file_handle);
 
         print_ploop_header(ploop_header);
     } else {
@@ -213,11 +213,10 @@ void read_header(ploop_pvd_header* ploop_header, char* file_path) {
 
 // Прочесть BAT таблицу
 void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& ploop_bat) {
-    ifstream ploop_file(file_path, ios::in|ios::binary);
+    int file_handle =  open(file_path, O_RDONLY);
 
-    if (ploop_file.is_open()) {
-        // skip ploop header
-        ploop_file.seekg(sizeof(ploop_pvd_header));
+    if (file_handle) {
+        lseek(file_handle, sizeof(ploop_pvd_header), SEEK_SET)
 
         // Размер блока ploop в байтах
         int cluster_size = ploop_header->m_Sectors * BYTES_IN_SECTOR;
@@ -261,9 +260,9 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
             }
 
             // read data from disk
-            ploop_file.read((char*)ploop_map, map_size); 
+            int read_result = read(file_handle, (char*)ploop_map, map_size); 
   
-            if (!ploop_file.good()) {
+            if (read_result == -1) {
                 cout<<"Can't read map from file!"<<endl;
                 exit(1);
             }   
@@ -294,7 +293,7 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
         }
 
         free(ploop_map);
-        ploop_file.close();
+        close(file_handle);
     
         std::cout<<"Number of non zero blocks in map: "<<not_null_blocks<<endl;
     } else {
@@ -362,7 +361,7 @@ int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset) {
         cout<<endl;
     }
 
-    size_t pread_result = pread(global_ploop_file_handle, (void*)buf, len, position_in_file);
+    size_t pread_result = pread(ploop_global_file_handle, (void*)buf, len, position_in_file);
    
     if (pread_result == -1) {
         cout<<"Can't read data from ploop file for nbd!"<<endl;
