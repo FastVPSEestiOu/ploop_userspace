@@ -543,9 +543,17 @@ int main(int argc, char *argv[]) {
    
         if (!we_should_mount_whole_disk) { 
             cout<<"Try to found partitions on ploop device"<<endl;
+            /*
+            partx lacks convinient support of NBD devices:
+            HDIO_GETGEO: Inappropriate ioctl for device 
             char partx_command[128];
             sprintf(partx_command, "partx -a %s 2>&1 >/dev/null", nbd_device_name);
             system(partx_command);
+            */
+
+            char partprobe_command[128];
+            sprintf(partprobe_command, "partprobe %s", nbd_device_name);
+            system(partprobe_command);
         }
 
         char first_nbd_partition_path[256];
