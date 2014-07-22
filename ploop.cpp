@@ -345,7 +345,7 @@ int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset) {
     assert(global_ploop_cluster_size != 0);
 
     u_int64_t data_page_number = offset / global_ploop_cluster_size;
-    int data_page_offset = offset % global_ploop_cluster_size;
+    u_int64_t data_page_offset = offset % global_ploop_cluster_size;
 
     bat_table_type::iterator map_item = ploop_bat.find(data_page_number);
 
@@ -374,11 +374,12 @@ int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset) {
     }
 
     if (TRACE_REQUESTS) {
-        cout<<"global offset:"<<global_first_block_offset<<" ";
-        cout<<"data_page_number: "<<data_page_number<<" ";
-        cout<<"data_page_real_place:"<<data_page_real_place<<" ";
-        cout<<"Offset for current page:"<<data_page_offset<<" ";
-        cout<<"position_in_file: "<<position_in_file<<" ";
+        cout<<"ploop cluster size:"         <<global_ploop_cluster_size<<" ";
+        cout<<"global first block offset:"  <<global_first_block_offset<<" ";
+        cout<<"data_page_number: "          <<data_page_number<<" ";
+        cout<<"data_page_real_place:"       <<data_page_real_place<<" ";
+        cout<<"offset for current page:"    <<data_page_offset<<" ";
+        cout<<"position_in_file: "          <<position_in_file<<" ";
         cout<<endl;
     }
 
