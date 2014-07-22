@@ -64,7 +64,8 @@ int main(int argc, char *argv[]) {
             break;
         } else {
             // readed_bytes > 0
-            size_t writed_bytes = write(stdout, buffer, readed_bytes);
+            // We should use fileno because stdout is a FILE*
+            size_t writed_bytes = write(fileno(stdout), buffer, readed_bytes);
 
             if (writed_bytes == -1) {
                 fprintf(stderr, "Can't write to stdout with error %s\n", strerror(errno));
