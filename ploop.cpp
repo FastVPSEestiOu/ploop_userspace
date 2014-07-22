@@ -175,7 +175,7 @@ bool find_ext4_magic(ploop_pvd_header* ploop_header, char* file_path, __u64 offs
     ifstream ploop_file(file_path, ios::in|ios::binary);
 
     if (ploop_file.is_open()) {
-        __u32 ext4_magic = 0;
+        __u16 ext4_magic = 0;
         // 0x438 - смещение magic short uint внутри файловой системы
         ploop_file.seekg(ploop_header->m_FirstBlockOffset * BYTES_IN_SECTOR + offset + 0x438);
         ploop_file.read((char*)&ext4_magic, sizeof(ext4_magic));
