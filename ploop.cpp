@@ -362,7 +362,7 @@ int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset) {
         cout<<endl;
     }
 
-    size_t pread_result = pread(ploop_file_handle, (void*)buf, len, position_in_file);
+    size_t pread_result = pread(global_ploop_file_handle, (void*)buf, len, position_in_file);
    
     if (pread_result == -1) {
         cout<<"Can't read data from ploop file for nbd!"<<endl;
