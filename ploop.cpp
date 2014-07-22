@@ -118,7 +118,7 @@ void print_ploop_header(struct ploop_pvd_header* header) {
         header->m_Sectors, header->m_Size);
 
     __u64 disk_size = get_ploop_size_in_sectors(header);
-    printf("size in sectors: %llu ", header->m_SizeInSectors_v2);
+    printf("size in sectors: %llu ", disk_size);
 
     printf("disk in use: %d first block offset: %d flags: %d",
         header->m_DiskInUse, header->m_FirstBlockOffset, header->m_Flags);
@@ -215,7 +215,11 @@ void read_header(ploop_pvd_header* ploop_header, char* file_path) {
 void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& ploop_bat) {
     int file_handle =  open(file_path, O_RDONLY);
 
-    if (file_handle) {
+    if (!file_handle) {
+        std::cout<<"Can't open ploop file"<<endl;
+        exit(1);
+    }
+
         lseek(file_handle, sizeof(ploop_pvd_header), SEEK_SET);
 
         // Размер блока ploop в байтах
@@ -296,11 +300,6 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
         close(file_handle);
     
         std::cout<<"Number of non zero blocks in map: "<<not_null_blocks<<endl;
-    } else {
-        std::cout<<"Can't open ploop file"<<endl;
-        exit(1);
-    }
-
 
     for (bat_table_type::iterator ii = ploop_bat.begin(); ii != ploop_bat.end(); ++ii) {
         //std::cout<<"index: "<<ii->first<<" key: "<<ii->second<<endl;
@@ -488,6 +487,10 @@ int main(int argc, char *argv[]) {
 
     // open ploop file for read_gpt and find_ext4
     ploop_global_file_handle = open(file_path, O_RDONLY);
+
+    if (ploop_header->m_DiskInUse) {
+        cout<<"Please be careful because this disk used now! If you need consistent backup please stop VE"<<endl;
+    }
 
     // read GPT header
     int gpt_is_found = 0;
