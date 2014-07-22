@@ -200,7 +200,7 @@ void read_header(ploop_pvd_header* ploop_header, char* file_path) {
 
     std::cout<<"Ploop file size is: "<<stat_data.st_size<<endl;
 
-    int file_handle =  open(file_path, O_RDONLY|O_DIRECT);
+    int file_handle =  open(file_path, O_RDONLY);
 
     if (file_handle) {
         int pread_result = pread(file_handle, (char*)ploop_header, sizeof(ploop_pvd_header), 0);
@@ -221,7 +221,7 @@ void read_header(ploop_pvd_header* ploop_header, char* file_path) {
 
 // Прочесть BAT таблицу
 void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& ploop_bat) {
-    int file_handle =  open(file_path, O_RDONLY|O_DIRECT);
+    int file_handle =  open(file_path, O_RDONLY);
 
     if (!file_handle) {
         std::cout<<"Can't open ploop file"<<endl;
