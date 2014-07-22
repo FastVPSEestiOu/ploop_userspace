@@ -499,6 +499,7 @@ int main(int argc, char *argv[]) {
     }
 
     bool ext4_found = false;
+    bool we_should_mount_whole_disk = false;
 
     // По-хорошему, конечно же, нужно читать GPT, но мы знаем, что ploop создает первый раздел
     // по смещению первого блока данных
@@ -510,6 +511,7 @@ int main(int argc, char *argv[]) {
     // Также из-за багов в скрипте vps_reinstall фс может быть создана прямо на первом блоке диска
     if (find_ext4_magic(ploop_header, file_path, 0)) {
         ext4_found = true;
+        we_should_mount_whole_disk = true;
         cout<<"We found ext4 signature at first block of disk. This fs created over block device without GPT"<<endl;
     }
 
@@ -538,20 +540,27 @@ int main(int argc, char *argv[]) {
     if (fork()) {
         //parent
         sleep(2);
-    
-        cout<<"Try to found partitions on ploop device"<<endl;
-        char partx_command[128];
-        sprintf(partx_command, "partx -a %s 2>&1 >/dev/null", nbd_device_name);
-        system(partx_command);
+   
+        if (!we_should_mount_whole_disk) { 
+            cout<<"Try to found partitions on ploop device"<<endl;
+            char partx_command[128];
+            sprintf(partx_command, "partx -a %s 2>&1 >/dev/null", nbd_device_name);
+            system(partx_command);
+        }
 
         char first_nbd_partition_path[256];
-        sprintf(first_nbd_partition_path, "%sp1", nbd_device_name);
+
+        if (we_should_mount_whole_disk) {
+            sprintf(first_nbd_partition_path, "%s", nbd_device_name);
+        } else {
+            sprintf(first_nbd_partition_path, "%sp1", nbd_device_name);
+        }
 
         if (!file_exists(first_nbd_partition_path)) {
             cout<<"First ploop partition was not detected properly, please call partx/partprobe manually"<<endl;
         }
 
-        cout<<"You could mount ploop filesystem with command: "<<"mount -r -o noload "<<nbd_device_name<<"p1 /mnt"<<endl;
+        cout<<"You could mount ploop filesystem with command: "<<"mount -r -o noload "<<first_nbd_partition_path<<" /mnt"<<endl;
         
         // wait for processes
         int status = 0;
