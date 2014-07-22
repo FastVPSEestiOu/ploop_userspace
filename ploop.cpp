@@ -216,7 +216,7 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
     int file_handle =  open(file_path, O_RDONLY);
 
     if (file_handle) {
-        lseek(file_handle, sizeof(ploop_pvd_header), SEEK_SET)
+        lseek(file_handle, sizeof(ploop_pvd_header), SEEK_SET);
 
         // Размер блока ploop в байтах
         int cluster_size = ploop_header->m_Sectors * BYTES_IN_SECTOR;
