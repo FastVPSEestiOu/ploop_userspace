@@ -241,13 +241,13 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
     // возьмем объем диска в секторах
     __u64 disk_size = get_ploop_size_in_sectors(ploop_header) * BYTES_IN_SECTOR;
 
-    __u64 disk_size_in_ploop_blocks = disk_size / cluster_size;
-    cout<<"For storing "<<disk_size<< " bytes on disk we need "<<disk_size_in_ploop_blocks<< " ploop blocks"<<endl;
-
     if (disk_size % cluster_size != 0) {
         cout<<"Disk size can't be counted in ploop clusters"<<endl;
         exit(1);
     }
+
+    __u64 disk_size_in_ploop_blocks = disk_size / cluster_size;
+    cout<<"For storing "<<disk_size<< " bytes on disk we need "<<disk_size_in_ploop_blocks<< " ploop blocks"<<endl;
 
     // Теперь зная размер блока и смещение блока с данными можно посчитать возможное число блоков BAT
     if (first_data_block_offset % cluster_size != 0) {
@@ -255,7 +255,7 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
         exit(1);
     }
 
-    // Один BAT может адресовать около 250 гб данных, так что нам нужно их больше в случае крупных дисков 
+    // Один BAT может адресовать около 250 гб данных
     int bat_blocks_number = first_data_block_offset/cluster_size; 
 
     cout<<"We have "<<bat_blocks_number<<" BAT blocks"<<endl;
@@ -304,6 +304,10 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
 
         for (int i = 0; i < number_of_slots_in_map; i++) {
             if (ploop_map[i] != 0) {
+                if (global_index > disk_size_in_ploop_blocks) {
+                    cout<<"Unexpected not null block in free zone! Index: "<<global_index<<" data: "<<ploop_map[i]<<endl;
+                }
+        
                 // заносим в общую таблицу размещения файлов не пустые блоки
                 // Как можно догадаться, global_index начинается с нуля, а вот целевой блок, всегда считается с 1,
                 // так как 0 означает, что блок пуст
