@@ -501,13 +501,13 @@ int main(int argc, char *argv[]) {
     // по смещению первого блока данных
     if (find_ext4_magic(ploop_header, file_path, global_ploop_cluster_size)) {
         ext4_found = true;
-        cout<<"We found ext4 signature at first partition block"
+        cout<<"We found ext4 signature at first partition block"<<endl;
     }
 
     // Также из-за багов в скрипте vps_reinstall фс может быть создана прямо на первом блоке диска
     if (find_ext4_magic(ploop_header, file_path, 0)) {
         ext4_found = true;
-        cout<<"We found ext4 signature at first block of disk. This fs created over block device without GPT"
+        cout<<"We found ext4 signature at first block of disk. This fs created over block device without GPT"<<endl;
     }
 
     __u64 ploop_size = get_ploop_size_in_sectors(ploop_header);
