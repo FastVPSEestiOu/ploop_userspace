@@ -510,6 +510,10 @@ int main(int argc, char *argv[]) {
         cout<<"We found ext4 signature at first block of disk. This fs created over block device without GPT"<<endl;
     }
 
+    if (!ext4_found) {
+        cout<<"We can't find ext4 signature"<<endl;
+    }
+
     __u64 ploop_size = get_ploop_size_in_sectors(ploop_header);
     init_ploop_userspace(ploop_size * BYTES_IN_SECTOR);
 
