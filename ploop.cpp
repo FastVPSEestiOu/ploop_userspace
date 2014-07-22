@@ -314,7 +314,9 @@ static int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata
 
 // Функция обертка, чтобы читать ploop как блочное устройство 
 int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset) {
-    cout<<"We got request for reading from offset: "<<offset<<" length "<<len<< " bytes "<<endl;
+    if (TRACE_REQUESTS) {
+        cout<<"We got request for reading from offset: "<<offset<<" length "<<len<< " bytes "<<endl;
+    }
 
     assert(global_first_block_offset != 0);
     assert(global_ploop_cluster_size != 0);
@@ -325,7 +327,10 @@ int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset) {
     bat_table_type::iterator map_item = ploop_bat.find(data_page_number);
 
     if (map_item == ploop_bat.end()) {
-        cout<<"WARNING! WARNING! WARNING! We can't get mapping for ploop block "<<data_page_number<<endl;
+        if (TRACE_REQUESTS) {
+            cout<<"WARNING! WARNING! WARNING! We can't get mapping for ploop block "<<data_page_number<<endl;
+        }
+
         // It's normal because ploops is sparse and sometimes ext4 tries to read blank areas
         memset(buf, 0, len);
 
