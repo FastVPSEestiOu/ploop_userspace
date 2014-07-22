@@ -59,7 +59,7 @@ bat_table_type ploop_bat;
 int ploop_global_file_handle = NULL;
 /* Cluster size in bytes */
 int global_ploop_cluster_size = 0; 
-int global_first_block_offset = 0;
+__uint64 global_first_block_offset = 0;
 static int buse_debug = 1;
 
 bool TRACE_REQUESTS = 0;
