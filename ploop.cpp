@@ -150,50 +150,31 @@ int file_exists(char* file_path) {
 
 #define GPT_SIGNATURE 0x5452415020494645ULL 
 void read_gpt(ploop_pvd_header* ploop_header, char* file_path, int* result) {
-    ifstream ploop_file(file_path, ios::in|ios::binary);
+    unsigned long long guid_header;
 
-    if (ploop_file.is_open()) {
-        unsigned long long guid_header;
+    // GPT table starts from 512byte on 512b sector or from 4096byte with 4k sector
+    ploop_read_as_block_device((void *)&guid_header, sizeof(guid_header), BYTES_IN_SECTOR);
 
-        // GPT table starts from 512byte on 512b sector or from 4096byte with 4k sector
-        ploop_file.seekg(ploop_header->m_FirstBlockOffset * BYTES_IN_SECTOR + BYTES_IN_SECTOR); 
-        ploop_file.read((char*)&guid_header, sizeof(guid_header));
-        ploop_file.close();
-
-        if (guid_header == GPT_SIGNATURE) {
-            *result = 1;
-        } else {
-            *result = 0;
-        }
+    if (guid_header == GPT_SIGNATURE) {
+        *result = 1;
     } else {
-        std::cout<<"Can't open ploop file"<<endl;
-        exit(1);
+        *result = 0;
     }
 }
 
 // Функция для поиска сигнатур файловой системы ext4
 bool find_ext4_magic(ploop_pvd_header* ploop_header, char* file_path, __u64 offset) {
-    ifstream ploop_file(file_path, ios::in|ios::binary);
-
-    if (ploop_file.is_open()) {
-        __u16 ext4_magic = 0;
-        // 0x438 - смещение magic short uint внутри файловой системы
-        ploop_file.seekg(ploop_header->m_FirstBlockOffset * BYTES_IN_SECTOR + offset + 0x438);
-        ploop_file.read((char*)&ext4_magic, sizeof(ext4_magic));
-        ploop_file.close(); 
+    __u16 ext4_magic = 0;
     
-        // magic number взят /usr/share/misc/magic 
-        if (ext4_magic == 0xEF53) {
-            return true;
-        } else {
-            return false;
-        }
-        
+    // 0x438 - смещение magic short uint внутри файловой системы
+    ploop_read_as_block_device((void *)&ext4_magic, sizeof(ext4_magic), offset + 0x438);
+    
+    // magic number взят /usr/share/misc/magic 
+    if (ext4_magic == 0xEF53) {
+        return true;
     } else {
-        std::cout<<"Can't open ploop file"<<endl;
-        exit(1);
-    }
-
+        return false;
+    }    
 }
 
 void read_header(ploop_pvd_header* ploop_header, char* file_path) {
