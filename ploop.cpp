@@ -296,7 +296,6 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
         ploop_file.close();
     
         std::cout<<"Number of non zero blocks in map: "<<not_null_blocks<<endl;
-        std::cout<<"We can store about "<<(__u32)(not_null_blocks)*cluster_size<< " bytes here"<<endl;
     } else {
         std::cout<<"Can't open ploop file"<<endl;
         exit(1);
