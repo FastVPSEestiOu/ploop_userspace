@@ -220,86 +220,86 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
         exit(1);
     }
 
-        lseek(file_handle, sizeof(ploop_pvd_header), SEEK_SET);
+    // Размер блока ploop в байтах
+    int cluster_size = ploop_header->m_Sectors * BYTES_IN_SECTOR;
 
-        // Размер блока ploop в байтах
-        int cluster_size = ploop_header->m_Sectors * BYTES_IN_SECTOR;
+    global_ploop_cluster_size = cluster_size;
 
-        global_ploop_cluster_size = cluster_size;
-
-        // Смещение первого блока с данными в байтах
-        int first_data_block_offset = ploop_header->m_FirstBlockOffset * BYTES_IN_SECTOR;
+    // Смещение первого блока с данными в байтах
+    int first_data_block_offset = ploop_header->m_FirstBlockOffset * BYTES_IN_SECTOR;
       
-        global_first_block_offset = first_data_block_offset;
+    global_first_block_offset = first_data_block_offset;
  
-        // Теперь зная размер блока и смещение блока с данными можно посчитать число блоков BAT
-        if (first_data_block_offset % cluster_size != 0) {
-            cout <<"Internal error! Data offset should be in start of cluster"<<endl;
+    // Теперь зная размер блока и смещение блока с данными можно посчитать число блоков BAT
+    if (first_data_block_offset % cluster_size != 0) {
+        cout <<"Internal error! Data offset should be in start of cluster"<<endl;
+        exit(1);
+    }
+
+    // Один BAT может адресовать около 250 гб данных, так что нам нужно их больше в случае крупных дисков 
+    int bat_blocks_number = first_data_block_offset/cluster_size; 
+
+    cout<<"We have "<<bat_blocks_number<<" BAT blocks"<<endl;
+
+    // Общее число не пустых блоков во всех BAT
+    int not_null_blocks = 0;
+ 
+    // глобальный индекс в таблице маппинга 
+    int global_index = 0;
+
+    // всегда выделяем объем данных по размеру кластера
+    map_index_t* ploop_map = (map_index_t*)malloc(cluster_size);
+
+    lseek(file_handle, sizeof(ploop_pvd_header), SEEK_SET);
+
+    for (int bat_index = 0; bat_index < bat_blocks_number; bat_index ++) {
+        int map_size = 0;
+
+        if (bat_index == 0) { 
+            // первый BAT блок у нас после заголовка ploop
+            map_size = cluster_size - sizeof(ploop_pvd_header);
+        } else {
+            // а тут весь блок наш, от начала до самого конца
+            map_size = cluster_size;
+        }
+
+        // read data from disk
+        int read_result = read(file_handle, (char*)ploop_map, map_size); 
+  
+        if (read_result == -1) {
+            cout<<"Can't read map from file!"<<endl;
+            exit(1);
+        }   
+
+ 
+        // вообще если размер блока нестандартный и на гранцие блока попадется половина байта и весь не влезет
+        // то будет косяк
+        if (map_size % sizeof(map_index_t) != 0) {
+            cout<<"Internal error! Can't count number of slots in map because it's not an integer"<<endl;
             exit(1);
         }
 
-        // Один BAT может адресовать около 250 гб данных, так что нам нужно их больше в случае крупных дисков 
-        int bat_blocks_number = first_data_block_offset/cluster_size; 
+        int number_of_slots_in_map = map_size / sizeof(map_index_t);
 
-        cout<<"We have "<<bat_blocks_number<<" BAT blocks"<<endl;
+        cout<<"We have "<<number_of_slots_in_map<<" slots in "<<bat_index + 1<<" map"<<endl;
 
-        // Общее число не пустых блоков во всех BAT
-        int not_null_blocks = 0;
- 
-        // глобальный индекс в таблице маппинга 
-        int global_index = 0;
-
-        // всегда выделяем объем данных по размеру кластера
-        map_index_t* ploop_map = (map_index_t*)malloc(cluster_size);
-
-        for (int bat_index = 0; bat_index < bat_blocks_number; bat_index ++) {
-            int map_size = 0;
-
-            if (bat_index == 0) { 
-                // первый BAT блок у нас после заголовка ploop
-                map_size = cluster_size - sizeof(ploop_pvd_header);
-            } else {
-                // а тут весь блок наш, от начала до самого конца
-                map_size = cluster_size;
+        for (int i = 0; i < number_of_slots_in_map; i++) {
+            if (ploop_map[i] != 0) {
+                // заносим в общую таблицу размещения файлов не пустые блоки
+                // Как можно догадаться, global_index начинается с нуля, а вот целевой блок, всегда считается с 1,
+                // так как 0 означает, что блок пуст
+                ploop_bat[global_index] = ploop_map[i];
+                not_null_blocks++;
             }
 
-            // read data from disk
-            int read_result = read(file_handle, (char*)ploop_map, map_size); 
-  
-            if (read_result == -1) {
-                cout<<"Can't read map from file!"<<endl;
-                exit(1);
-            }   
-
- 
-            // вообще если размер блока нестандартный и на гранцие блока попадется половина байта и весь не влезет
-            // то будет косяк
-            if (map_size % sizeof(map_index_t) != 0) {
-                cout<<"Internal error! Can't count number of slots in map because it's not an integer"<<endl;
-                exit(1);
-            }
-
-            int number_of_slots_in_map = map_size / sizeof(map_index_t);
-
-            cout<<"We have "<<number_of_slots_in_map<<" slots in "<<bat_index<<" map"<<endl;
-
-            for (int i = 0; i < number_of_slots_in_map; i++) {
-                if (ploop_map[i] != 0) {
-                    // заносим в общую таблицу размещения файлов не пустые блоки
-                    // Как можно догадаться, global_index начинается с нуля, а вот целевой блок, всегда считается с 1,
-                    // так как 0 означает, что блок пуст
-                    ploop_bat[global_index] = ploop_map[i];
-                    not_null_blocks++;
-                }
-
-                global_index++;
-            }
+            global_index++;
         }
+    }
 
-        free(ploop_map);
-        close(file_handle);
+    free(ploop_map);
+    close(file_handle);
     
-        std::cout<<"Number of non zero blocks in map: "<<not_null_blocks<<endl;
+    std::cout<<"Number of non zero blocks in map: "<<not_null_blocks<<endl;
 
     for (bat_table_type::iterator ii = ploop_bat.begin(); ii != ploop_bat.end(); ++ii) {
         //std::cout<<"index: "<<ii->first<<" key: "<<ii->second<<endl;
