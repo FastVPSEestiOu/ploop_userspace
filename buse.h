@@ -6,7 +6,7 @@ extern "C" {
 #endif
   
   /* Most of this file was copied from nbd.h in the nbd distribution. */
-#include <linux/types.h>
+//#include <linux/types.h>
 #include <sys/types.h>
 #include <linux/nbd.h>
 

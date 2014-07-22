@@ -9,7 +9,15 @@ Author: pavel.odintsov@gmail.com
 #include <fstream>
 #include <iostream>
 #include <sys/types.h>
-#include <linux/types.h> 
+
+#ifdef  __linux__
+#include <linux/types.h>
+#endif
+
+#ifdef __APPLE__
+
+#endif
+ 
 #include <stdio.h>
 #include <fcntl.h>
 #include <stdlib.h>
