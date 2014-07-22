@@ -519,6 +519,12 @@ int main(int argc, char *argv[]) {
         cout<<"We can't find ext4 signature"<<endl;
     }
 
+
+    if (getenv("SKIP_MOUNT")) {
+        exit(0);
+    }   
+
+
     __u64 ploop_size = get_ploop_size_in_sectors(ploop_header);
     init_ploop_userspace(ploop_size * BYTES_IN_SECTOR);
 
@@ -570,10 +576,6 @@ int main(int argc, char *argv[]) {
 
         cout<<"You could mount ploop filesystem with command: "<<"mount -r -o noload "<<first_nbd_partition_path<<" /mnt"<<endl;
        
-        if (getenv("SKIP_MOUNT")) {
-            exit(0);
-        }
- 
         // wait for processes
         int status = 0;
         wait(&status);
