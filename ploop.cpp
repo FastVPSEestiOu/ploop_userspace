@@ -374,7 +374,6 @@ int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset) {
     }
 
     if (TRACE_REQUESTS) {
-        cout<<endl;
         cout<<"global offset:"<<global_first_block_offset<<" ";
         cout<<"data_page_number: "<<data_page_number<<" ";
         cout<<"data_page_real_place:"<<data_page_real_place<<" ";
@@ -389,6 +388,10 @@ int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset) {
         cout<<"Can't read data from ploop file for nbd!"<<endl;
         exit(1);
     }   
+
+    if (pread_result < len) {
+        cout<<"We readed less data then client requested"<<endl;
+    }
  
     return 0;
 }
