@@ -47,7 +47,7 @@ typedef __u32 map_index_t;
 /* Эти переменные вынуждены быть глобальными, так как иного варианта работы с ними в BUSE нету */
 typedef std::map<u_int64_t, map_index_t> bat_table_type;
 bat_table_type ploop_bat;
-ifstream ploop_global_file_handle;
+FILE* ploop_global_file_handle = NULL;
 /* Cluster size in bytes */
 int global_ploop_cluster_size = 0; 
 int global_first_block_offset = 0;
@@ -84,7 +84,7 @@ struct ploop_pvd_header
 #pragma pack(pop)
 
 /* Prototypes */
-int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset);
+int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset, FILE* file_handle);
 bool find_ext4_magic(ploop_pvd_header* ploop_header, char* file_path, __u64 offset);
 void consistency_check();
 void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& ploop_bat);
@@ -307,12 +307,12 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
     } 
 }
 
-static int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata) {
-    return ploop_read_as_block_device(buf, len, offset); 
+int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata) {
+    return ploop_read_as_block_device(buf, len, offset, ploop_global_file_handle); 
 };
 
 // Функция обертка, чтобы читать ploop как блочное устройство 
-int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset) {
+int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset, FILE* file_handle) {
     if (TRACE_REQUESTS) {
         cout<<"We got request for reading from offset: "<<offset<<" length "<<len<< " bytes "<<endl;
     }
@@ -359,10 +359,9 @@ int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset) {
         cout<<endl;
     }
 
-    ploop_global_file_handle.seekg(position_in_file);
-    ploop_global_file_handle.read((char*)buf, len);
+    size_t pread_result = pread(ploop_file_handle, (void*)buf, len, position_in_file);
    
-    if (!ploop_global_file_handle.good()) {
+    if (pread_result == -1) {
         cout<<"Can't read data from ploop file for nbd!"<<endl;
         exit(1);
     }   
@@ -486,7 +485,7 @@ int main(int argc, char *argv[]) {
     read_bat(ploop_header, file_path, ploop_bat);
 
     // open ploop file for read_gpt and find_ext4
-    ploop_global_file_handle.open(file_path, ios::in|ios::binary);
+    ploop_global_file_handle = fopen(file_path, "rb");
 
     // read GPT header
     int gpt_is_found = 0;
@@ -541,7 +540,7 @@ int main(int argc, char *argv[]) {
     }
 
     // we need close and reopen handles for fork
-    ploop_global_file_handle.close();
+    close(global_file_handle);
 
     if (fork()) {
         //parent
@@ -580,9 +579,9 @@ int main(int argc, char *argv[]) {
         int status = 0;
         wait(&status);
     } else {
-        ploop_global_file_handle.open(file_path, ios::in|ios::binary);
+        ploop_global_file_handle = fopen(file_path, "rb");
         buse_main(nbd_device_name, &ploop_userspace, (void *)&buse_debug);
     }
-    // ploop_global_file_handle.close()
+    // close(ploop_global_file_handle)
     // delete (ploop_header);
 }
