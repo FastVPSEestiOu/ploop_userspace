@@ -231,7 +231,7 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
     global_first_block_offset = first_data_block_offset;
  
     // возьмем объем диска в секторах
-    __u64 disk_size = get_ploop_size_in_sectors(header) * BYTES_IN_SECTOR;
+    __u64 disk_size = get_ploop_size_in_sectors(ploop_header) * BYTES_IN_SECTOR;
 
     __u64 disk_size_in_ploop_blocks = disk_size / cluster_size;
     cout<<"For storing "<<disk_size<< " bytes on disk we need "<<disk_size_in_ploop_blocks<< " ploop blocks"<<endl;
