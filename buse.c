@@ -119,8 +119,10 @@ int buse_main(const char* dev_file, const struct buse_operations *aop, void *use
     else{
       err = ioctl(nbd, NBD_DO_IT);
       fprintf(stderr, "nbd device terminated with  with err code: %d err text: %s\n", errno, strerror(errno));
-      if (err == -1)
+      if (err == -1) {
 	fprintf(stderr, "%s\n", strerror(errno));
+        exit(1);
+      }
     }
 
     ioctl(nbd, NBD_CLEAR_QUE);
