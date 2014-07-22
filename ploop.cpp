@@ -540,7 +540,7 @@ int main(int argc, char *argv[]) {
     }
 
     // we need close and reopen handles for fork
-    close(global_file_handle);
+    close(ploop_global_file_handle);
 
     if (fork()) {
         //parent
