@@ -569,7 +569,11 @@ int main(int argc, char *argv[]) {
         }
 
         cout<<"You could mount ploop filesystem with command: "<<"mount -r -o noload "<<first_nbd_partition_path<<" /mnt"<<endl;
-        
+       
+        if (getenv("SKIP_MOUNT")) {
+            exit(0);
+        }
+ 
         // wait for processes
         int status = 0;
         wait(&status);
