@@ -61,6 +61,8 @@ int ploop_global_file_handle = NULL;
 /* Cluster size in bytes */
 int global_ploop_cluster_size = 0; 
 __u64 global_first_block_offset = 0;
+__u64 global_ploop_file_size_on_underlying_fs = 0;
+__u64 global_ploop_block_device_size = 0;
 static int buse_debug = 1;
 
 bool TRACE_REQUESTS = 0;
@@ -199,6 +201,7 @@ void read_header(ploop_pvd_header* ploop_header, char* file_path) {
         exit(1);
     }
 
+    global_ploop_file_size_on_underlying_fs = stat_data.st_size;
     std::cout<<"Ploop file size is: "<<stat_data.st_size<<endl;
 
     int file_handle =  open(file_path, O_RDONLY);
@@ -241,6 +244,8 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
  
     // возьмем объем диска в секторах
     __u64 disk_size = get_ploop_size_in_sectors(ploop_header) * BYTES_IN_SECTOR;
+
+    global_ploop_block_device_size = disk_size;
 
     if (disk_size % cluster_size != 0) {
         cout<<"Disk size can't be counted in ploop clusters"<<endl;
@@ -342,6 +347,14 @@ int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset) {
         cout<<"We got request for reading from offset: "<<offset<<" length "<<len<< " bytes "<<endl;
     }
 
+    if (global_ploop_block_device_size < offset) {
+        cout<<"!!!ERROR!!! Somebody wants read with offset bigger than our ploop device"<<endl; 
+    }
+
+    if (global_ploop_block_device_size < offset + len) {
+         cout<<"!!!ERROR!!! END OF DATA IS OUT OF PLOOP DEVICE SIZE!!! IN'S AN MISTAKE"<<endl;
+    }
+
     assert(global_first_block_offset != 0);
     assert(global_ploop_cluster_size != 0);
 
@@ -367,6 +380,11 @@ int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset) {
     assert(data_page_real_place != 0);
 
     u_int64_t position_in_file = global_first_block_offset + (data_page_real_place-1) * global_ploop_cluster_size + data_page_offset;
+
+    // Если смещение в файле + длина считываемых данных больше самого файла
+    if (position_in_file + len > global_ploop_file_size_on_underlying_fs) {
+        cout<<"WE TRIED TO READ DATA OVER THE FILE END!!! IT'S REALLY BAD"<<endl;
+    } 
 
     // Тут мы рассматриваем случай, когда данные попадают на два блока одновременно 
     // TODO: реализовать
@@ -454,7 +472,7 @@ void consistency_check() {
 }
 
 int main(int argc, char *argv[]) {
-    if (getenv("TRACE_OPERATIONS")) {
+    if (getenv("TRACE_REQUESTS")) {
         TRACE_REQUESTS = true;
     }
 

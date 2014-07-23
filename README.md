@@ -56,7 +56,7 @@ You could mount ploop filesystem with command: mount -r -o noload /dev/nbd0p1 /m
 
 For debugging purposes you can add flag for dump all I/O operations:
 ```bash
-TRACE_OPERATIONS=1 ./ploop_userspace 1202
+TRACE_REQUESTS=1 ./ploop_userspace 1202
 ```
 
 Remarks about I/O scheduler for NBD (you should aware of cfq scheduler because it can broke nbd):
