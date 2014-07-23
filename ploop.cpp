@@ -526,7 +526,7 @@ int main(int argc, char *argv[]) {
     if (gpt_is_found) {
         cout<<"We found GPT table on this disk"<<endl;
     } else {
-        cout<<"We can't found GPT table on this disk"<<endl;
+        cout<<"!!!ERROR!!! We can't found GPT table on this disk"<<endl;
     }
 
     bool ext4_found = false;
@@ -547,7 +547,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (!ext4_found) {
-        cout<<"We can't find ext4 signature"<<endl;
+        cout<<"!!!ERROR!!! We can't find ext4 signature"<<endl;
     }
 
 
