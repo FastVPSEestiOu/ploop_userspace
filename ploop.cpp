@@ -395,14 +395,14 @@ int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset) {
     }
 
     if (TRACE_REQUESTS) {
-        cout<<"ploop cluster size:\t"         <<global_ploop_cluster_size<<endl;
+        cout<<"ploop cluster size:\t\t"         <<global_ploop_cluster_size<<endl;
         cout<<"global first block offset:\t"  <<global_first_block_offset<<endl;
         cout<<"global ploop block device size\t"<<global_ploop_block_device_size<<endl;
-        cout<<"data_page_number:\t"          <<data_page_number<<endl;
-        cout<<"data_page_real_place:\t"       <<data_page_real_place<<endl;
+        cout<<"data_page_number:\t\t"          <<data_page_number<<endl;
+        cout<<"data_page_real_place:\t\t"       <<data_page_real_place<<endl;
         cout<<"offset for current page:\t"    <<data_page_offset<<endl;
-        cout<<"ploop file size:\t"           <<global_ploop_file_size_on_underlying_fs<<endl;
-        cout<<"position_in_file:\t"          <<position_in_file<<endl;
+        cout<<"ploop file size:\t\t"           <<global_ploop_file_size_on_underlying_fs<<endl;
+        cout<<"position_in_file:\t\t"          <<position_in_file<<endl;
         cout<<endl;
     }
 
