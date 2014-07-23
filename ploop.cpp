@@ -330,8 +330,11 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
     
     std::cout<<"Number of non zero blocks in map: "<<not_null_blocks<<endl;
 
+    vector<map_index_t> used_blocks;
+    used_blocks.reserve(not_null_blocks);
     for (bat_table_type::iterator ii = ploop_bat.begin(); ii != ploop_bat.end(); ++ii) {
         //std::cout<<"index: "<<ii->first<<" key: "<<ii->second<<endl;
+        used_blocks.push_back(ii->second);
     } 
 }
 
