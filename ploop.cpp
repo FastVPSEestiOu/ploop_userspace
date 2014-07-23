@@ -343,15 +343,17 @@ int ploop_read(void *buf, u_int32_t len, u_int64_t offset, void *userdata) {
 int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset) {
     int file_handle = ploop_global_file_handle;
 
+    __u64 data_read_end = offset + len;
+
     if (TRACE_REQUESTS) {
-        cout<<"We got request for reading from offset: "<<offset<<" length "<<len<< " bytes "<<endl;
+        cout<<"We got request for reading from offset: "<<offset<<" length "<<len<< " bytes to the end: "<<data_read_end<<endl;
     }
 
     if (global_ploop_block_device_size < offset) {
         cout<<"!!!ERROR!!! Somebody wants read with offset bigger than our ploop device"<<endl; 
     }
 
-    if (global_ploop_block_device_size < offset + len) {
+    if (global_ploop_block_device_size < data_read_end) {
          cout<<"!!!ERROR!!! END OF DATA IS OUT OF PLOOP DEVICE SIZE!!! IN'S AN MISTAKE"<<endl;
     }
 
@@ -393,12 +395,14 @@ int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset) {
     }
 
     if (TRACE_REQUESTS) {
-        cout<<"ploop cluster size:"         <<global_ploop_cluster_size<<endl;
-        cout<<"global first block offset:"  <<global_first_block_offset<<endl;
-        cout<<"data_page_number: "          <<data_page_number<<endl;
-        cout<<"data_page_real_place:"       <<data_page_real_place<<endl;
-        cout<<"offset for current page:"    <<data_page_offset<<endl;
-        cout<<"position_in_file: "          <<position_in_file<<endl;
+        cout<<"ploop cluster size:\t"         <<global_ploop_cluster_size<<endl;
+        cout<<"global first block offset:\t"  <<global_first_block_offset<<endl;
+        cout<<"global ploop block device size\t"<<global_ploop_block_device_size<<endl;
+        cout<<"data_page_number:\t"          <<data_page_number<<endl;
+        cout<<"data_page_real_place:\t"       <<data_page_real_place<<endl;
+        cout<<"offset for current page:\t"    <<data_page_offset<<endl;
+        cout<<"ploop file size:\t"           <<global_ploop_file_size_on_underlying_fs<<endl;
+        cout<<"position_in_file:\t"          <<position_in_file<<endl;
         cout<<endl;
     }
 
