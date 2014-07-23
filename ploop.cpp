@@ -27,6 +27,7 @@ Author: pavel.odintsov@gmail.com
 #include <unistd.h>
 #include <sys/wait.h>
 #include <assert.h>
+#include <errno.h>
 
 #include <vector>
 #include <map>
