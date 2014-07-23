@@ -391,7 +391,7 @@ int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset) {
     }   
 
     if (pread_result < len) {
-        cout<<"We readed less data then client requested"<<endl;
+        cout<<"We readed ("<<pread_result<<") less data then client requested ("<<len")"<<endl;
     }
  
     return 0;
