@@ -8,6 +8,10 @@ License: GPLv2
 
 How it works? We use [BUSE](https://github.com/acozzette/BUSE) and NBD for emulating block device without any support from kernel. We got some code from ploop project and reverse storage format. We can only read ploop images because writing to a ploop file with this tool is too dangerous yet and complicated and will be result in incompatibility with in-kernel ploop.
 
+Compatibility:
+* ploop v1 read only support - full
+* ploop v2 read only support - full
+
 Installing:
 
 Requirements for Debian:

@@ -59,7 +59,9 @@ typedef std::map<u_int64_t, map_index_t> bat_table_type;
 bat_table_type ploop_bat;
 int ploop_global_file_handle = NULL;
 /* Cluster size in bytes */
-int global_ploop_cluster_size = 0; 
+int global_ploop_cluster_size = 0;
+/* Ploop version */ 
+int global_ploop_version = 2;
 __u64 global_first_block_offset = 0;
 __u64 global_ploop_file_size_on_underlying_fs = 0;
 __u64 global_ploop_block_device_size = 0;
@@ -235,6 +237,7 @@ void read_bat(ploop_pvd_header* ploop_header, char* file_path, bat_table_type& p
     // Размер блока ploop в байтах
     int cluster_size = ploop_header->m_Sectors * BYTES_IN_SECTOR;
 
+    global_ploop_version = get_ploop_version(ploop_header); 
     global_ploop_cluster_size = cluster_size;
 
     // Смещение первого блока с данными в байтах
@@ -384,7 +387,18 @@ int ploop_read_as_block_device(void *buf, u_int32_t len, u_int64_t offset) {
 
     assert(data_page_real_place != 0);
 
-    u_int64_t position_in_file = global_first_block_offset + (data_page_real_place-1) * global_ploop_cluster_size + data_page_offset;
+    
+    u_int64_t position_in_file = 0;
+
+    if (global_ploop_version == 2) {
+        // Для второй версии ploop data_page_real_place считается в блоках
+        position_in_file = global_first_block_offset + (data_page_real_place-1) * global_ploop_cluster_size + data_page_offset;
+    } else {
+        printf("Target position: %d\n", data_page_real_place);
+        // А для первой, в 512 байтовых секторах: data_page_real_place
+        // Причем, реальное местоположение хранится в BAT с учетом смещения хидера
+        position_in_file = data_page_real_place * 512 + data_page_offset;
+    }
 
     // Если смещение в файле + длина считываемых данных больше самого файла
     if (position_in_file + len > global_ploop_file_size_on_underlying_fs) {
