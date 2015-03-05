@@ -57,7 +57,7 @@ typedef __u32 map_index_t;
 /* Эти переменные вынуждены быть глобальными, так как иного варианта работы с ними в BUSE нету */
 typedef std::map<u_int64_t, map_index_t> bat_table_type;
 bat_table_type ploop_bat;
-int ploop_global_file_handle = NULL;
+int ploop_global_file_handle = 0;
 /* Cluster size in bytes */
 int global_ploop_cluster_size = 0;
 /* Ploop version */ 
