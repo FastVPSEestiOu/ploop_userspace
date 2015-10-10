@@ -16,7 +16,7 @@ Installing:
 
 Requirements for Debian:
 ```bash
-apt-get install -y kpartx build-essential
+apt-get install -y kpartx build-essential git parted
 ```
 
 Requirements for CentOS:
