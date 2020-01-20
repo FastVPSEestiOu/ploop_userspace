@@ -468,6 +468,7 @@ static struct buse_operations ploop_userspace;
 void init_ploop_userspace(__u64 disk_size_in_bytes) {
     ploop_userspace.read = ploop_read;
     ploop_userspace.size = disk_size_in_bytes;
+    ploop_userspace.blksize = BYTES_IN_SECTOR;
 
     //ploop_userspace.write = ploop_write;
     //ploop_userspace.disc = ploop_disc;
